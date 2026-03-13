@@ -38,22 +38,22 @@ public final class ModernConfirmDialog extends JDialog {
     private JComponent buildContent(String title, String message, String[] options, int defaultOption) {
         JPanel outer = new JPanel(new BorderLayout());
         outer.setOpaque(false);
-        outer.setBorder(new EmptyBorder(14, 14, 14, 14));
+        outer.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        RoundedPanel card = new RoundedPanel(24);
-        card.setLayout(new BorderLayout(0, 18));
+        RoundedPanel card = new RoundedPanel(20);
+        card.setLayout(new BorderLayout(0, 12));
         card.setBackground(BG);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER, 1),
-                new EmptyBorder(20, 22, 18, 22)
+                new EmptyBorder(14, 16, 14, 16)
         ));
 
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 21));
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 17));
         titleLabel.setForeground(TEXT);
 
         JLabel messageLabel = new JLabel(toHtml(message));
-        messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
         messageLabel.setForeground(SUB);
 
         JPanel textWrap = new JPanel();
@@ -62,10 +62,10 @@ public final class ModernConfirmDialog extends JDialog {
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         textWrap.add(titleLabel);
-        textWrap.add(Box.createVerticalStrut(8));
+        textWrap.add(Box.createVerticalStrut(6));
         textWrap.add(messageLabel);
 
-        JPanel buttonRow = new JPanel(new GridLayout(1, options.length, 12, 0));
+        JPanel buttonRow = new JPanel(new GridLayout(1, options.length, 8, 0));
         buttonRow.setOpaque(false);
 
         for (int i = 0; i < options.length; i++) {
@@ -91,8 +91,8 @@ public final class ModernConfirmDialog extends JDialog {
     private JButton createButton(String text, boolean primary) {
         JButton button = new JButton(text);
         button.setFocusPainted(false);
-        button.setBorder(new EmptyBorder(12, 18, 12, 18));
-        button.setFont(new Font("SansSerif", Font.BOLD, 14));
+        button.setBorder(new EmptyBorder(9, 14, 9, 14));
+        button.setFont(new Font("SansSerif", Font.BOLD, 13));
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         button.setContentAreaFilled(false);
         button.setOpaque(false);
@@ -141,7 +141,7 @@ public final class ModernConfirmDialog extends JDialog {
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
                 .replace("\n", "<br>");
-        return "<html><div style='width: 360px;'>" + escaped + "</div></html>";
+        return "<html><div style='width: 250px;'>" + escaped + "</div></html>";
     }
 
     private static final class RoundedPanel extends JPanel {
@@ -218,9 +218,9 @@ public final class ModernConfirmDialog extends JDialog {
             boolean hovered = b.getModel().isRollover();
             boolean pressed = b.getModel().isPressed();
             g2.setColor(pressed ? hover.darker() : hovered ? hover : fill);
-            g2.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), 18, 18);
+            g2.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), 16, 16);
             g2.setColor(border);
-            g2.drawRoundRect(0, 0, c.getWidth() - 1, c.getHeight() - 1, 18, 18);
+            g2.drawRoundRect(0, 0, c.getWidth() - 1, c.getHeight() - 1, 16, 16);
             g2.dispose();
             super.paint(g, c);
         }
