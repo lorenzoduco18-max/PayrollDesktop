@@ -26,13 +26,6 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml
 
-      - name: Build App Installer Bundles
-        uses: shannah/jdeploy@master
-        with:
-          github_token: ${{ github.token }}
-          npm_token: ${{ secrets.NPM_TOKEN }}
-          deploy_target: npm
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -40,3 +33,16 @@ jobs:
           name: PayrollDesktop ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish installers to GitHub Release
+        uses: shannah/jdeploy@master
+        with:
+          github_token: ${{ github.token }}
+          deploy_target: github
+
+      - name: Publish package to npm
+        uses: shannah/jdeploy@master
+        with:
+          github_token: ${{ github.token }}
+          npm_token: ${{ secrets.NPM_TOKEN }}
+          deploy_target: npm
