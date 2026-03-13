@@ -1,6 +1,7 @@
 name: jDeploy Release
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
