@@ -1,7 +1,0 @@
-Manifest-Version: 1.0
-Build-Jdk-Spec: 23
-Main-Class: app.Main
-Created-By: Maven Integration for Eclipse
-Implementation-Title: Payroll Desktop
-Implementation-Version: 1.0.4
-
