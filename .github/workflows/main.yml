@@ -2,8 +2,8 @@ name: jDeploy Release
 
 on:
   push:
-    branches: ['main']
-    tags: ['*']
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
@@ -36,7 +36,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.4
-          name: PayrollDesktop 1.0.4
+          tag_name: ${{ github.ref_name }}
+          name: PayrollDesktop ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
