@@ -21,8 +21,7 @@ jobs:
       - name: Install jDeploy
         run: npm install -g jdeploy
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build installers
-        run: jdeploy bundle
+      - name: Publish with jDeploy
+        run: jdeploy publish
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
