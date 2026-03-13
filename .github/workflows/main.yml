@@ -6,6 +6,9 @@ on:
     tags: ['*']
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,3 +32,11 @@ jobs:
           github_token: ${{ github.token }}
           npm_token: ${{ secrets.NPM_TOKEN }}
           deploy_target: npm
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.4
+          name: PayrollDesktop 1.0.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
