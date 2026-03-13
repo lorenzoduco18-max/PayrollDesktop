@@ -1,0 +1,27 @@
+name: jDeploy Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  jdeploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install jDeploy
+        run: npm install -g jdeploy
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build installers
+        run: jdeploy bundle
