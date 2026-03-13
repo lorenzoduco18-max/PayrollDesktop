@@ -65,6 +65,7 @@ ui\LogbookPanel$1.class
 ui\EmployeeTimePanel$PillButton$1.class
 ui\ModernConfirmDialog$RoundedButtonUI.class
 util\Theme$1.class
+util\UpdateChecker.class
 ui\LogbookPanel$DatePickerField$1.class
 ui\LoginFrame$LoginOutcome.class
 ui\EmployeeTimePanel$PillButton.class

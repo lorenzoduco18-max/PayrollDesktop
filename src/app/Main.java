@@ -1,6 +1,7 @@
 package app;
 
 import javax.swing.SwingUtilities;
+import util.UpdateChecker;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import ui.LoginFrame;
@@ -14,7 +15,7 @@ public class Main {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "error");
 
         // System.setProperty("org.slf4j.simpleLogger.showShortLogName", "false");
-
+        UpdateChecker.checkForUpdates();
         FlatLightLaf.setup(); // ✅ must be BEFORE creating Swing windows
 
         SwingUtilities.invokeLater(LoginFrame::new);
