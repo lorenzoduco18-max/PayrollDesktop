@@ -1218,13 +1218,24 @@ t.setSelectionBackground(new Color(35, 120, 195));
         private final JComboBox<EmployeeItem> cbEmployee = new JComboBox<>();
 
         private final DateTimeValue inVal = new DateTimeValue(LocalDate.now(), 9, 0, false);
+        private final DateTimeValue lunchOutVal = new DateTimeValue(LocalDate.now(), 12, 0, false);
+        private final DateTimeValue lunchInVal = new DateTimeValue(LocalDate.now(), 1, 0, true);
         private final DateTimeValue outVal = new DateTimeValue(LocalDate.now(), 6, 0, true);
 
         private final DatePickerField inDate = new DatePickerField(inVal);
         private final TimePickerField inTime = new TimePickerField(inVal);
 
+        private final DatePickerField lunchOutDate = new DatePickerField(lunchOutVal);
+        private final TimePickerField lunchOutTime = new TimePickerField(lunchOutVal);
+
+        private final DatePickerField lunchInDate = new DatePickerField(lunchInVal);
+        private final TimePickerField lunchInTime = new TimePickerField(lunchInVal);
+
         private final DatePickerField outDate = new DatePickerField(outVal);
         private final TimePickerField outTime = new TimePickerField(outVal);
+
+        private final JCheckBox chkHasLunchOut = new JCheckBox("Lunch Out");
+        private final JCheckBox chkHasLunchIn = new JCheckBox("Lunch In");
 
         // ✅ CHANGED TEXT
         private final JCheckBox chkHasOut = new JCheckBox("Time Out");
@@ -1241,7 +1252,11 @@ t.setSelectionBackground(new Color(35, 120, 195));
 
             if (editingLogId != null) loadExisting(editingLogId);
             else {
+                chkHasLunchOut.setSelected(false);
+                chkHasLunchIn.setSelected(false);
                 chkHasOut.setSelected(false);
+                toggleLunchOutEnabled();
+                toggleLunchInEnabled();
                 toggleOutEnabled();
             }
 
@@ -1289,8 +1304,36 @@ t.setSelectionBackground(new Color(35, 120, 195));
             gc.gridy = 3;
             form.add(dateTimeRow(inDate, inTime), gc);
 
-            // Time Out + checkbox
+            // Lunch Out + checkbox
             gc.gridy = 4;
+            JPanel lunchOutTop = new JPanel(new BorderLayout());
+            lunchOutTop.setOpaque(false);
+            lunchOutTop.add(sectionLabel("Lunch Out"), BorderLayout.WEST);
+            chkHasLunchOut.setOpaque(false);
+            chkHasLunchOut.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            chkHasLunchOut.setForeground(new Color(0, 0, 0, 170));
+            lunchOutTop.add(chkHasLunchOut, BorderLayout.EAST);
+            form.add(lunchOutTop, gc);
+
+            gc.gridy = 5;
+            form.add(dateTimeRow(lunchOutDate, lunchOutTime), gc);
+
+            // Lunch In + checkbox
+            gc.gridy = 6;
+            JPanel lunchInTop = new JPanel(new BorderLayout());
+            lunchInTop.setOpaque(false);
+            lunchInTop.add(sectionLabel("Lunch In"), BorderLayout.WEST);
+            chkHasLunchIn.setOpaque(false);
+            chkHasLunchIn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            chkHasLunchIn.setForeground(new Color(0, 0, 0, 170));
+            lunchInTop.add(chkHasLunchIn, BorderLayout.EAST);
+            form.add(lunchInTop, gc);
+
+            gc.gridy = 7;
+            form.add(dateTimeRow(lunchInDate, lunchInTime), gc);
+
+            // Time Out + checkbox
+            gc.gridy = 8;
             JPanel outTop = new JPanel(new BorderLayout());
             outTop.setOpaque(false);
 
@@ -1303,9 +1346,21 @@ t.setSelectionBackground(new Color(35, 120, 195));
 
             form.add(outTop, gc);
 
-            gc.gridy = 5;
+            gc.gridy = 9;
             form.add(dateTimeRow(outDate, outTime), gc);
 
+            chkHasLunchOut.addActionListener(e -> {
+                if (!chkHasLunchOut.isSelected()) {
+                    chkHasLunchIn.setSelected(false);
+                    toggleLunchInEnabled();
+                }
+                toggleLunchOutEnabled();
+            });
+            chkHasLunchIn.addActionListener(e -> {
+                if (chkHasLunchIn.isSelected()) chkHasLunchOut.setSelected(true);
+                toggleLunchOutEnabled();
+                toggleLunchInEnabled();
+            });
             chkHasOut.addActionListener(e -> toggleOutEnabled());
 
             JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -1324,6 +1379,10 @@ t.setSelectionBackground(new Color(35, 120, 195));
             // Apply modern input styling for date/time text + icon buttons
             styleDateTimeField(inDate);
             styleDateTimeField(inTime);
+            styleDateTimeField(lunchOutDate);
+            styleDateTimeField(lunchOutTime);
+            styleDateTimeField(lunchInDate);
+            styleDateTimeField(lunchInTime);
             styleDateTimeField(outDate);
             styleDateTimeField(outTime);
 
@@ -1393,6 +1452,22 @@ t.setSelectionBackground(new Color(35, 120, 195));
             }
         }
 
+        private void toggleLunchOutEnabled() {
+            boolean en = chkHasLunchOut.isSelected();
+            lunchOutDate.setEnabled(en);
+            lunchOutTime.setEnabled(en);
+            setDateTimeRowDim(lunchOutDate, en);
+            setDateTimeRowDim(lunchOutTime, en);
+        }
+
+        private void toggleLunchInEnabled() {
+            boolean en = chkHasLunchOut.isSelected() && chkHasLunchIn.isSelected();
+            lunchInDate.setEnabled(en);
+            lunchInTime.setEnabled(en);
+            setDateTimeRowDim(lunchInDate, en);
+            setDateTimeRowDim(lunchInTime, en);
+        }
+
         // ✅ UPDATED: disables and visually dims the entire Time Out row
         private void toggleOutEnabled() {
             boolean en = chkHasOut.isSelected();
@@ -1432,10 +1507,14 @@ t.setSelectionBackground(new Color(35, 120, 195));
                 String tlLogId = pickColumn(con, "time_logs", "id", "log_id", "time_log_id");
                 String tlEmpFk = pickColumn(con, "time_logs", "emp_id", "employee_id", "empno", "employee_no");
                 String tlTimeIn = pickColumn(con, "time_logs", "time_in", "timein", "clock_in");
+                String tlLunchOut = pickColumnOptional(con, "time_logs", "lunch_out", "lunchout");
+                String tlLunchIn = pickColumnOptional(con, "time_logs", "lunch_in", "lunchin");
                 String tlTimeOut = pickColumn(con, "time_logs", "time_out", "timeout", "clock_out");
 
-                String sql = "SELECT " + tlEmpFk + " AS emp_fk, " + tlTimeIn + " AS time_in, " + tlTimeOut +
-                        " AS time_out FROM time_logs WHERE " + tlLogId + "=? LIMIT 1";
+                String sql = "SELECT " + tlEmpFk + " AS emp_fk, " + tlTimeIn + " AS time_in, " +
+                        (tlLunchOut != null ? tlLunchOut + " AS lunch_out, " : "NULL AS lunch_out, ") +
+                        (tlLunchIn != null ? tlLunchIn + " AS lunch_in, " : "NULL AS lunch_in, ") +
+                        tlTimeOut + " AS time_out FROM time_logs WHERE " + tlLogId + "=? LIMIT 1";
 
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, logId);
@@ -1444,11 +1523,27 @@ t.setSelectionBackground(new Color(35, 120, 195));
 
                         int empId = rs.getInt("emp_fk");
                         Timestamp tin = rs.getTimestamp("time_in");
+                        Timestamp tlOut = rs.getTimestamp("lunch_out");
+                        Timestamp tlIn = rs.getTimestamp("lunch_in");
                         Timestamp tout = rs.getTimestamp("time_out");
 
                         if (tin != null) {
                             LocalDateTime ldt = tin.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
                             inVal.fromLocalDateTime(ldt);
+                        }
+                        if (tlOut != null) {
+                            LocalDateTime ldt = tlOut.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                            lunchOutVal.fromLocalDateTime(ldt);
+                            chkHasLunchOut.setSelected(true);
+                        } else {
+                            chkHasLunchOut.setSelected(false);
+                        }
+                        if (tlIn != null) {
+                            LocalDateTime ldt = tlIn.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                            lunchInVal.fromLocalDateTime(ldt);
+                            chkHasLunchIn.setSelected(true);
+                        } else {
+                            chkHasLunchIn.setSelected(false);
                         }
                         if (tout != null) {
                             LocalDateTime ldt = tout.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
@@ -1460,9 +1555,15 @@ t.setSelectionBackground(new Color(35, 120, 195));
 
                         inDate.setValue(inVal);
                         inTime.setValue(inVal);
+                        lunchOutDate.setValue(lunchOutVal);
+                        lunchOutTime.setValue(lunchOutVal);
+                        lunchInDate.setValue(lunchInVal);
+                        lunchInTime.setValue(lunchInVal);
                         outDate.setValue(outVal);
                         outTime.setValue(outVal);
 
+                        toggleLunchOutEnabled();
+                        toggleLunchInEnabled();
                         toggleOutEnabled();
 
                         for (int i = 0; i < cbEmployee.getItemCount(); i++) {
@@ -1490,41 +1591,107 @@ t.setSelectionBackground(new Color(35, 120, 195));
             }
 
             LocalDateTime ldtIn = inVal.toLocalDateTime();
+            LocalDateTime ldtLunchOut = chkHasLunchOut.isSelected() ? lunchOutVal.toLocalDateTime() : null;
+            LocalDateTime ldtLunchIn = (chkHasLunchOut.isSelected() && chkHasLunchIn.isSelected()) ? lunchInVal.toLocalDateTime() : null;
             LocalDateTime ldtOut = chkHasOut.isSelected() ? outVal.toLocalDateTime() : null;
 
+            if (ldtLunchOut != null && ldtLunchOut.isBefore(ldtIn)) {
+                JOptionPane.showMessageDialog(this,
+                        "Lunch Out cannot be earlier than Time In.",
+                        "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (ldtLunchIn != null && ldtLunchOut == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Lunch In cannot exist without Lunch Out.",
+                        "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (ldtLunchIn != null && ldtLunchIn.isBefore(ldtLunchOut)) {
+                JOptionPane.showMessageDialog(this,
+                        "Lunch In cannot be earlier than Lunch Out.",
+                        "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             if (ldtOut != null && ldtOut.isBefore(ldtIn)) {
                 JOptionPane.showMessageDialog(this,
                         "Time Out cannot be earlier than Time In.",
                         "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
+            if (ldtOut != null && ldtLunchOut != null && ldtOut.isBefore(ldtLunchOut)) {
+                JOptionPane.showMessageDialog(this,
+                        "Time Out cannot be earlier than Lunch Out.",
+                        "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (ldtOut != null && ldtLunchIn != null && ldtOut.isBefore(ldtLunchIn)) {
+                JOptionPane.showMessageDialog(this,
+                        "Time Out cannot be earlier than Lunch In.",
+                        "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
 
             Timestamp tsIn = Timestamp.valueOf(ldtIn);
+            Timestamp tsLunchOut = (ldtLunchOut == null) ? null : Timestamp.valueOf(ldtLunchOut);
+            Timestamp tsLunchIn = (ldtLunchIn == null) ? null : Timestamp.valueOf(ldtLunchIn);
             Timestamp tsOut = (ldtOut == null) ? null : Timestamp.valueOf(ldtOut);
 
             try (Connection con = DB.getConnection()) {
                 String tlLogId = pickColumn(con, "time_logs", "id", "log_id", "time_log_id");
                 String tlEmpFk = pickColumn(con, "time_logs", "emp_id", "employee_id", "empno", "employee_no");
                 String tlTimeIn = pickColumn(con, "time_logs", "time_in", "timein", "clock_in");
+                String tlLunchOut = pickColumnOptional(con, "time_logs", "lunch_out", "lunchout");
+                String tlLunchIn = pickColumnOptional(con, "time_logs", "lunch_in", "lunchin");
                 String tlTimeOut = pickColumn(con, "time_logs", "time_out", "timeout", "clock_out");
 
+                if ((chkHasLunchOut.isSelected() || chkHasLunchIn.isSelected()) && (tlLunchOut == null || tlLunchIn == null)) {
+                    JOptionPane.showMessageDialog(this,
+                            "Your database is missing lunch columns. Add lunch_out and lunch_in first.",
+                            "Missing lunch columns", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
                 if (editingLogId == null) {
-                    String sql = "INSERT INTO time_logs (" + tlEmpFk + ", " + tlTimeIn + ", " + tlTimeOut + ") VALUES (?,?,?)";
+                    String sql = "INSERT INTO time_logs (" + tlEmpFk + ", " + tlTimeIn + ", " +
+                            (tlLunchOut != null ? tlLunchOut + ", " : "") +
+                            (tlLunchIn != null ? tlLunchIn + ", " : "") +
+                            tlTimeOut + ") VALUES (?,?," +
+                            (tlLunchOut != null ? "?," : "") +
+                            (tlLunchIn != null ? "?," : "") +
+                            "?)";
                     try (PreparedStatement ps = con.prepareStatement(sql)) {
-                        ps.setInt(1, empIt.empId);
-                        ps.setTimestamp(2, tsIn);
-                        if (tsOut != null) ps.setTimestamp(3, tsOut);
-                        else ps.setNull(3, Types.TIMESTAMP);
+                        int ix = 1;
+                        ps.setInt(ix++, empIt.empId);
+                        ps.setTimestamp(ix++, tsIn);
+                        if (tlLunchOut != null) {
+                            if (tsLunchOut != null) ps.setTimestamp(ix++, tsLunchOut); else ps.setNull(ix++, Types.TIMESTAMP);
+                        }
+                        if (tlLunchIn != null) {
+                            if (tsLunchIn != null) ps.setTimestamp(ix++, tsLunchIn); else ps.setNull(ix++, Types.TIMESTAMP);
+                        }
+                        if (tsOut != null) ps.setTimestamp(ix++, tsOut);
+                        else ps.setNull(ix++, Types.TIMESTAMP);
                         ps.executeUpdate();
                     }
                 } else {
-                    String sql = "UPDATE time_logs SET " + tlEmpFk + "=?, " + tlTimeIn + "=?, " + tlTimeOut + "=? WHERE " + tlLogId + "=?";
+                    String sql = "UPDATE time_logs SET " + tlEmpFk + "=?, " + tlTimeIn + "=?, " +
+                            (tlLunchOut != null ? tlLunchOut + "=?, " : "") +
+                            (tlLunchIn != null ? tlLunchIn + "=?, " : "") +
+                            tlTimeOut + "=? WHERE " + tlLogId + "=?";
                     try (PreparedStatement ps = con.prepareStatement(sql)) {
-                        ps.setInt(1, empIt.empId);
-                        ps.setTimestamp(2, tsIn);
-                        if (tsOut != null) ps.setTimestamp(3, tsOut);
-                        else ps.setNull(3, Types.TIMESTAMP);
-                        ps.setString(4, editingLogId);
+                        int ix = 1;
+                        ps.setInt(ix++, empIt.empId);
+                        ps.setTimestamp(ix++, tsIn);
+                        if (tlLunchOut != null) {
+                            if (tsLunchOut != null) ps.setTimestamp(ix++, tsLunchOut); else ps.setNull(ix++, Types.TIMESTAMP);
+                        }
+                        if (tlLunchIn != null) {
+                            if (tsLunchIn != null) ps.setTimestamp(ix++, tsLunchIn); else ps.setNull(ix++, Types.TIMESTAMP);
+                        }
+                        if (tsOut != null) ps.setTimestamp(ix++, tsOut);
+                        else ps.setNull(ix++, Types.TIMESTAMP);
+                        ps.setString(ix, editingLogId);
                         ps.executeUpdate();
                     }
                 }

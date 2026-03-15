@@ -93,12 +93,15 @@ public class PayrollRunDialog extends JDialog {
     private final JTextField tfOTMultiplier = new JTextField("1.25");
     private final JTextField tfOTRateOverride = new JTextField("");
     private final JTextField tfDeductions = new JTextField("0");
-    private final JTextField tfIncentives = new JTextField("0");
+    private final JTextField tfAdditionalEarnings = new JTextField("0");
 
     // ✅ Deductions Options UI
     private final JButton btnDeductionOptions = new JButton("Options");
+    private final JButton btnEarningsOptions = new JButton("Earnings Options");
     private JPopupMenu deductionsPopup;
     private JPanel deductionsPanel;
+    private JPopupMenu earningsPopup;
+    private JPanel earningsPanel;
 
     // ✅ Deductions state (used for preview breakdown)
     private boolean useCash = false, useSmart = false, useOthers = false;
@@ -108,6 +111,10 @@ public class PayrollRunDialog extends JDialog {
     // ✅ Statutory deductions (PH) state
     private boolean useSSS = false, usePagibig = false, usePhilHealth = false;
     private String sssAmt = "0", pagibigAmt = "0", philhealthAmt = "0";
+
+    // ✅ Additional earnings state
+    private boolean useIncentives = false, useThirteenthMonth = false, useBonus = false;
+    private String incentivesAmt = "0", thirteenthMonthAmt = "0", bonusAmt = "0";
 
     // ✅ PREVIEW NOW = HTML (modern)
     private final JEditorPane preview = new JEditorPane();
@@ -215,10 +222,15 @@ public class PayrollRunDialog extends JDialog {
 
         // ✅ Deductions popup wiring
         buildDeductionsPopup();
+        buildEarningsPopup();
         btnDeductionOptions.addActionListener(e -> showDeductionsPopup());
+        btnEarningsOptions.addActionListener(e -> showEarningsPopup());
 
         tfDeductions.addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent e) { showDeductionsPopup(); }
+        });
+        tfAdditionalEarnings.addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e) { showEarningsPopup(); }
         });
         
         PayrollTabModernizer.apply(root);
@@ -513,10 +525,10 @@ g.gridx = 0; g.gridy = r;
         form.add(tfDeductions, g);
 
         g.gridx = 2; asLabel.accept(g);
-        form.add(label("Incentives (₱):"), g);
+        form.add(label("Additional Earnings (₱):"), g);
 
         g.gridx = 3; asField.accept(g);
-        form.add(tfIncentives, g);
+        form.add(tfAdditionalEarnings, g);
 
         JButton btnCompute = new JButton("Compute Payslip");
         JButton btnPDF = new JButton("Generate PDF");
@@ -547,12 +559,19 @@ g.gridx = 0; g.gridy = r;
         g.gridy++;
         g.insets = new Insets(6, 10, 16, 10);
 
-        // Options button under the Deductions/Incentives row
+        // Options buttons under the Deductions / Additional Earnings row
+        JPanel optionsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        optionsRow.setOpaque(false);
+        optionsRow.add(btnDeductionOptions);
+        optionsRow.add(btnEarningsOptions);
+
         g.gridx = 1;
+        g.gridwidth = 2;
         g.weightx = 0;
         g.fill = GridBagConstraints.NONE;
         g.anchor = GridBagConstraints.WEST;
-        form.add(btnDeductionOptions, g);
+        form.add(optionsRow, g);
+        g.gridwidth = 1;
 
         // Buttons aligned to the right
         g.gridx = 3;
@@ -1269,6 +1288,209 @@ private static class DurationDocumentFilter extends DocumentFilter {
         recalc.run();
     }
 
+    private void showEarningsPopup() {
+        if (earningsPopup == null) buildEarningsPopup();
+
+        JRootPane root = getRootPane();
+        if (root == null) {
+            earningsPopup.show(btnEarningsOptions, 0, btnEarningsOptions.getHeight());
+            return;
+        }
+
+        Dimension pref = earningsPanel.getPreferredSize();
+        int popupW = pref.width;
+        int popupH = pref.height;
+
+        Point p = SwingUtilities.convertPoint(btnEarningsOptions, 0, 0, root);
+        int spaceBelow = root.getHeight() - (p.y + btnEarningsOptions.getHeight());
+        int spaceAbove = p.y;
+
+        int x = 0;
+        int y = btnEarningsOptions.getHeight();
+        if (spaceBelow < popupH && spaceAbove > spaceBelow) {
+            y = -popupH;
+        }
+        int rightOverflow = (p.x + popupW) - root.getWidth();
+        if (rightOverflow > 0) x = -rightOverflow - 4;
+
+        earningsPopup.show(btnEarningsOptions, x, y);
+    }
+
+    private void buildEarningsPopup() {
+        earningsPopup = new JPopupMenu();
+        earningsPopup.setLightWeightPopupEnabled(false);
+        earningsPopup.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.BORDER, 1, true),
+                new EmptyBorder(2, 2, 2, 2)
+        ));
+
+        earningsPanel = new JPanel();
+        earningsPanel.setLayout(new BoxLayout(earningsPanel, BoxLayout.Y_AXIS));
+        earningsPanel.setBackground(Theme.CARD);
+        earningsPanel.setBorder(new EmptyBorder(10, 12, 10, 12));
+        earningsPanel.setPreferredSize(new Dimension(520, 280));
+
+        JLabel title = new JLabel("Additional Earnings Options");
+        title.setForeground(Theme.PRIMARY);
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        earningsPanel.add(title);
+        earningsPanel.add(Box.createVerticalStrut(8));
+
+        JCheckBox cbIncentives = new JCheckBox("Incentives");
+        JCheckBox cbThirteenth = new JCheckBox("13th Month Pay");
+        JCheckBox cbBonus = new JCheckBox("Bonus");
+        for (JCheckBox cb : new JCheckBox[]{cbIncentives, cbThirteenth, cbBonus}) {
+            cb.setOpaque(false);
+            cb.setForeground(Theme.TEXT);
+        }
+
+        JTextField tfIncentivesPopup = new JTextField(incentivesAmt);
+        JTextField tfThirteenth = new JTextField(thirteenthMonthAmt);
+        JTextField tfBonus = new JTextField(bonusAmt);
+        for (JTextField tf : new JTextField[]{tfIncentivesPopup, tfThirteenth, tfBonus}) {
+            Theme.styleInput(tf);
+            tf.setPreferredSize(new Dimension(0, 34));
+            tf.setMinimumSize(new Dimension(0, 34));
+            tf.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+            tf.setMargin(new Insets(6, 8, 6, 8));
+            tf.setColumns(22);
+        }
+
+        cbIncentives.setSelected(useIncentives);
+        cbThirteenth.setSelected(useThirteenthMonth);
+        cbBonus.setSelected(useBonus);
+        tfIncentivesPopup.setEnabled(useIncentives);
+        tfThirteenth.setEnabled(useThirteenthMonth);
+        tfBonus.setEnabled(useBonus);
+
+        JLabel peso1 = new JLabel("₱");
+        JLabel peso2 = new JLabel("₱");
+        JLabel peso3 = new JLabel("₱");
+        for (JLabel pp : new JLabel[]{peso1, peso2, peso3}) pp.setForeground(Theme.MUTED);
+
+        JLabel totalLbl = new JLabel();
+        totalLbl.setForeground(Theme.MUTED);
+        totalLbl.setFont(totalLbl.getFont().deriveFont(Font.PLAIN, 11.5f));
+        totalLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        java.util.function.Function<Object[], JPanel> row = (arr) -> {
+            JCheckBox cb = (JCheckBox) arr[0];
+            JTextField tf = (JTextField) arr[1];
+            JLabel peso = (JLabel) arr[2];
+
+            JPanel r = new JPanel(new BorderLayout(10, 0));
+            r.setOpaque(false);
+            r.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            JPanel left = new JPanel(new BorderLayout());
+            left.setOpaque(false);
+            left.setPreferredSize(new Dimension(150, 34));
+            left.add(cb, BorderLayout.WEST);
+
+            JPanel right = new JPanel(new BorderLayout());
+            right.setOpaque(false);
+            right.setPreferredSize(new Dimension(18, 34));
+            right.add(peso, BorderLayout.CENTER);
+
+            r.add(left, BorderLayout.WEST);
+            r.add(tf, BorderLayout.CENTER);
+            r.add(right, BorderLayout.EAST);
+            return r;
+        };
+
+        Runnable recalc = () -> {
+            useIncentives = cbIncentives.isSelected();
+            useThirteenthMonth = cbThirteenth.isSelected();
+            useBonus = cbBonus.isSelected();
+
+            tfIncentivesPopup.setEnabled(useIncentives);
+            tfThirteenth.setEnabled(useThirteenthMonth);
+            tfBonus.setEnabled(useBonus);
+
+            incentivesAmt = tfIncentivesPopup.getText();
+            thirteenthMonthAmt = tfThirteenth.getText();
+            bonusAmt = tfBonus.getText();
+
+            double total = (useIncentives ? parseMoney(incentivesAmt) : 0.0)
+                    + (useThirteenthMonth ? parseMoney(thirteenthMonthAmt) : 0.0)
+                    + (useBonus ? parseMoney(bonusAmt) : 0.0);
+            tfAdditionalEarnings.setText(formatMoney(total));
+            tfAdditionalEarnings.setCaretPosition(0);
+            totalLbl.setText("Total: ₱" + formatMoney(total));
+        };
+
+        java.awt.event.ItemListener il = e -> recalc.run();
+        cbIncentives.addItemListener(il);
+        cbThirteenth.addItemListener(il);
+        cbBonus.addItemListener(il);
+
+        javax.swing.event.DocumentListener dl = new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { recalc.run(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { recalc.run(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { recalc.run(); }
+        };
+        tfIncentivesPopup.getDocument().addDocumentListener(dl);
+        tfThirteenth.getDocument().addDocumentListener(dl);
+        tfBonus.getDocument().addDocumentListener(dl);
+
+        javax.swing.event.DocumentListener autoCheck = new javax.swing.event.DocumentListener() {
+            private void run() {
+                SwingUtilities.invokeLater(() -> {
+                    if (parseMoney(tfIncentivesPopup.getText()) > 0) cbIncentives.setSelected(true);
+                    if (parseMoney(tfThirteenth.getText()) > 0) cbThirteenth.setSelected(true);
+                    if (parseMoney(tfBonus.getText()) > 0) cbBonus.setSelected(true);
+                });
+            }
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { run(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { run(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { run(); }
+        };
+        tfIncentivesPopup.getDocument().addDocumentListener(autoCheck);
+        tfThirteenth.getDocument().addDocumentListener(autoCheck);
+        tfBonus.getDocument().addDocumentListener(autoCheck);
+
+        earningsPanel.add(row.apply(new Object[]{cbIncentives, tfIncentivesPopup, peso1}));
+        earningsPanel.add(Box.createVerticalStrut(8));
+        earningsPanel.add(row.apply(new Object[]{cbThirteenth, tfThirteenth, peso2}));
+        earningsPanel.add(Box.createVerticalStrut(8));
+        earningsPanel.add(row.apply(new Object[]{cbBonus, tfBonus, peso3}));
+        earningsPanel.add(Box.createVerticalStrut(12));
+        earningsPanel.add(totalLbl);
+        earningsPanel.add(Box.createVerticalStrut(12));
+
+        JButton btnClear = new JButton("Clear");
+        JButton btnDone = new JButton("Done");
+        Theme.styleSecondaryButton(btnClear);
+        Theme.stylePrimaryButton(btnDone);
+        makeButton(btnClear, 36);
+        makeButton(btnDone, 36);
+
+        btnClear.addActionListener(e -> {
+            cbIncentives.setSelected(false);
+            cbThirteenth.setSelected(false);
+            cbBonus.setSelected(false);
+            tfIncentivesPopup.setText("0");
+            tfThirteenth.setText("0");
+            tfBonus.setText("0");
+            recalc.run();
+        });
+        btnDone.addActionListener(e -> {
+            recalc.run();
+            earningsPopup.setVisible(false);
+        });
+
+        JPanel actionRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        actionRow.setOpaque(false);
+        actionRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        actionRow.add(btnClear);
+        actionRow.add(btnDone);
+        earningsPanel.add(actionRow);
+
+        earningsPopup.add(earningsPanel);
+        recalc.run();
+    }
+
     // ================= STYLES =================
     private void applyThemeStyles() {
         Theme.styleCombo(cbEmp);
@@ -1287,8 +1509,10 @@ private static class DurationDocumentFilter extends DocumentFilter {
         Theme.styleInput(tfOTMultiplier);
         Theme.styleInput(tfOTRateOverride);
         Theme.styleInput(tfDeductions);
+        Theme.styleInput(tfAdditionalEarnings);
 
         Theme.styleSecondaryButton(btnDeductionOptions);
+        Theme.styleSecondaryButton(btnEarningsOptions);
 
         setFixedHeight(cbEmp, 32);
 
@@ -1306,9 +1530,12 @@ private static class DurationDocumentFilter extends DocumentFilter {
         setFixedHeight(tfOTMultiplier, 32);
         setFixedHeight(tfOTRateOverride, 32);
         setFixedHeight(tfDeductions, 32);
+        setFixedHeight(tfAdditionalEarnings, 32);
 
         makeButton(btnDeductionOptions, 34);
+        makeButton(btnEarningsOptions, 34);
         btnDeductionOptions.setPreferredSize(new Dimension(92, 34));
+        btnEarningsOptions.setPreferredSize(new Dimension(150, 34));
     }
 
     private void setFixedHeight(JComponent c, int h) {
@@ -1614,11 +1841,16 @@ void initPeriodCombo() {
                     otMult, otOverride, 0
             );
 
-            // ✅ Incentives
-            double incentives = parseDouble(tfIncentives.getText());
+            // ✅ Additional earnings
+            double incentives = useIncentives ? parseDouble(incentivesAmt) : 0.0;
+            double thirteenthMonthPay = useThirteenthMonth ? parseDouble(thirteenthMonthAmt) : 0.0;
+            double bonusPay = useBonus ? parseDouble(bonusAmt) : 0.0;
             p.incentives = incentives;
-            // Add incentives to gross before deductions/statutory computations
-            p.grossPay = p.grossPay + incentives;
+            p.thirteenthMonthPay = thirteenthMonthPay;
+            p.bonusPay = bonusPay;
+            p.additionalEarnings = incentives + thirteenthMonthPay + bonusPay;
+            // Add additional earnings to gross before deductions/statutory computations
+            p.grossPay = p.grossPay + p.additionalEarnings;
 
 
             // ✅ store OT toggle state for PDF rendering
@@ -1650,9 +1882,11 @@ void initPeriodCombo() {
                     + p.sssDeduction + p.pagibigDeduction + p.philhealthDeduction;
             p.netPay = p.grossPay - p.deductions;
 
-            // keep the UI field in sync
+            // keep the UI fields in sync
             tfDeductions.setText(formatMoney(p.deductions));
             tfDeductions.setCaretPosition(0);
+            tfAdditionalEarnings.setText(formatMoney(p.additionalEarnings));
+            tfAdditionalEarnings.setCaretPosition(0);
 
             // store totals as well (your rule)
             p.totalHours = totalHours;
@@ -2021,6 +2255,8 @@ void initPeriodCombo() {
                 + tr("Special Holiday Pay", Money.php(specHolPayDisp))
                 + tr("Holiday Pay (Total)", Money.php(p.holidayPremiumPay))
                 + (p.incentives != 0 ? tr("Incentives", Money.php(p.incentives)) : "")
+                + (p.thirteenthMonthPay != 0 ? tr("13th Month Pay", Money.php(p.thirteenthMonthPay)) : "")
+                + (p.bonusPay != 0 ? tr("Bonus", Money.php(p.bonusPay)) : "")
                 + "</table>"
                 + "</div>"
                 + "<div class='col'>"

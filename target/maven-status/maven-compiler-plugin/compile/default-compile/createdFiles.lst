@@ -4,6 +4,7 @@ ui\EmployeeDetailsDialog$DotIcon.class
 util\PDFUtil$FontPack.class
 service\PayrollCalculator.class
 ui\EmployeeTimePanel$DateOnlyRenderer.class
+ui\PayrollRunDialog$11.class
 app\Main.class
 ui\LogbookPanel$2.class
 util\Theme$BubbleButtonUI$State.class
@@ -110,6 +111,7 @@ ui\PayrollRunDialog$9.class
 ui\CameraCaptureDialog$LiveView.class
 ui\LogbookPanel$6.class
 ui\LoginFrame$ShadowLabel.class
+ui\PayrollRunDialog$12.class
 dao\TimeLogDAO$Columns.class
 ui\EmployeeDetailsDialog$StatTile.class
 ui\LoginFrame$RoundedTextField.class
@@ -165,5 +167,6 @@ dao\PayslipPublishDAO$PublishedPdf.class
 ui\EmployeesDialog.class
 ui\EmployeesPanel$3.class
 ui\LogbookPanel$DateTimeValue.class
+ui\PayrollRunDialog$10.class
 ui\EmployeeDetailsDialog$WorkSummary.class
 util\Theme.class

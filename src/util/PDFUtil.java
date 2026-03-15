@@ -438,6 +438,12 @@ public class PDFUtil {
                 double incentives = getDoubleSmart(p,
                         new String[]{"incentives","incentive","incentivePay","incentivesPay","incentivesAmount","incentiveAmount"},
                         new String[]{"incentives","incentive"});
+                double thirteenthMonthPay = getDoubleSmart(p,
+                        new String[]{"thirteenthMonthPay","thirteenth_month_pay","month13Pay","month13_pay"},
+                        new String[]{"thirteenthmonthpay","13thmonthpay"});
+                double bonusPay = getDoubleSmart(p,
+                        new String[]{"bonusPay","bonus","bonus_pay"},
+                        new String[]{"bonuspay","bonus"});
 
                 if (basicPay == 0 && totalHours > 0 && hourRate > 0) basicPay = totalHours * hourRate;
                 if (otPay == 0 && totalOTHours > 0 && otRate > 0) otPay = totalOTHours * otRate;
@@ -475,15 +481,21 @@ public class PDFUtil {
                 if (incentives > 0.0000001) {
                     rows.add(new EarnRow4("INCENTIVES", 0, "", incentives));
                 }
+                if (thirteenthMonthPay > 0.0000001) {
+                    rows.add(new EarnRow4("13TH MONTH PAY", 0, "", thirteenthMonthPay));
+                }
+                if (bonusPay > 0.0000001) {
+                    rows.add(new EarnRow4("BONUS", 0, "", bonusPay));
+                }
 
-                int rowCount = 8;
+                int rowCount = Math.max(8, rows.size());
                 float eY = eBodyTop - H_ROW;
 
                 for (int i = 0; i < rowCount; i++) {
                     EarnRow4 r = (i < rows.size()) ? rows.get(i) : null;
 
                     if (r != null) {
-                        String hrsTxt = ("HOLIDAY PAY (TOTAL)".equals(r.descr) || "INCENTIVES".equals(r.descr)) ? "" : fmtHM(r.hrs);
+                        String hrsTxt = ("HOLIDAY PAY (TOTAL)".equals(r.descr) || "INCENTIVES".equals(r.descr) || "13TH MONTH PAY".equals(r.descr) || "BONUS".equals(r.descr)) ? "" : fmtHM(r.hrs);
                         earningsRow4(cs, fonts, earnX, eColDesc, eColHrs, eColRate, eRight, eY,
                                 r.descr, hrsTxt, safe(r.rateText), money(r.amount, fonts.isUnicode));
                     } else {
@@ -589,8 +601,8 @@ deductionRowAmountBold(cs, fonts, dedX, dColAmt, dColRem, dY, "TOTAL DEDUCTIONS"
 
                 double gross = getDouble(p, "grossPay", "gross", "grosspay");
                 if (gross == 0) {
-                    gross = basicPay + otPay + regHolPay + regHolOtPay + specHolPay + specHolOtPay;
-                    if (holidayTotalPay > 0) gross = (basicPay + otPay) + holidayTotalPay;
+                    gross = basicPay + otPay + regHolPay + regHolOtPay + specHolPay + specHolOtPay + incentives + thirteenthMonthPay + bonusPay;
+                    if (holidayTotalPay > 0) gross = (basicPay + otPay) + holidayTotalPay + incentives + thirteenthMonthPay + bonusPay;
                 }
                 if (net == 0) net = gross - deductions;
 

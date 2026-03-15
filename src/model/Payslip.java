@@ -48,8 +48,11 @@ public class Payslip {
     // Earnings
     public double basicPay;
 
-    // ✅ Incentives / bonuses (added to gross pay)
+    // ✅ Additional earnings (added to gross pay)
     public double incentives;
+    public double thirteenthMonthPay;
+    public double bonusPay;
+    public double additionalEarnings;
 
     // ✅ OT breakdown (so PDF can show holiday OT amount WITHOUT double counting)
     public double regularDayOtPay;

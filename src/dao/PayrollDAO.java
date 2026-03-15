@@ -27,38 +27,32 @@ public class PayrollDAO {
     public static int savePayslip(Payslip p) throws Exception {
 
         try (Connection con = DB.getConnection()) {
+            boolean hasIncentives = hasColumn(con, "payslips", "incentives") || hasColumn(con, "payslips", "incentive");
+            boolean hasThirteenth = hasColumn(con, "payslips", "thirteenth_month_pay") || hasColumn(con, "payslips", "thirteenthmonthpay") || hasColumn(con, "payslips", "month13_pay");
+            boolean hasBonus = hasColumn(con, "payslips", "bonus") || hasColumn(con, "payslips", "bonus_pay");
 
-            // Optional column support (keeps compatibility with your existing DB)
-            boolean hasIncentives = hasColumn(con, "payslips", "incentives")
-                    || hasColumn(con, "payslips", "incentive")
-                    || hasColumn(con, "payslips", "bonus");
+            StringBuilder cols = new StringBuilder("run_id, emp_id, basic_pay, overtime_pay");
+            StringBuilder vals = new StringBuilder("?,?,?,?");
+            if (hasIncentives) { cols.append(", incentives"); vals.append(",?"); }
+            if (hasThirteenth) { cols.append(", thirteenth_month_pay"); vals.append(",?"); }
+            if (hasBonus) { cols.append(", bonus"); vals.append(",?"); }
+            cols.append(", gross_pay, deductions, net_pay");
+            vals.append(",?,?,?");
 
-            String sql;
-            if (hasIncentives) {
-                sql = "INSERT INTO payslips(run_id, emp_id, basic_pay, overtime_pay, incentives, gross_pay, deductions, net_pay) " +
-                      "VALUES(?,?,?,?,?,?,?,?)";
-            } else {
-                sql = "INSERT INTO payslips(run_id, emp_id, basic_pay, overtime_pay, gross_pay, deductions, net_pay) " +
-                      "VALUES(?,?,?,?,?,?,?)";
-            }
+            String sql = "INSERT INTO payslips(" + cols + ") VALUES(" + vals + ")";
 
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-                ps.setInt(1, p.runId);
-                ps.setInt(2, p.emp.empId);
-                ps.setDouble(3, p.basicPay);
-                ps.setDouble(4, p.overtimePay);
-
-                if (hasIncentives) {
-                    ps.setDouble(5, p.incentives);
-                    ps.setDouble(6, p.grossPay);
-                    ps.setDouble(7, p.deductions);
-                    ps.setDouble(8, p.netPay);
-                } else {
-                    ps.setDouble(5, p.grossPay);
-                    ps.setDouble(6, p.deductions);
-                    ps.setDouble(7, p.netPay);
-                }
+                int i = 1;
+                ps.setInt(i++, p.runId);
+                ps.setInt(i++, p.emp.empId);
+                ps.setDouble(i++, p.basicPay);
+                ps.setDouble(i++, p.overtimePay);
+                if (hasIncentives) ps.setDouble(i++, p.incentives);
+                if (hasThirteenth) ps.setDouble(i++, p.thirteenthMonthPay);
+                if (hasBonus) ps.setDouble(i++, p.bonusPay);
+                ps.setDouble(i++, p.grossPay);
+                ps.setDouble(i++, p.deductions);
+                ps.setDouble(i++, p.netPay);
 
                 ps.executeUpdate();
 
