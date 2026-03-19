@@ -480,20 +480,6 @@ g.gridx = 0; g.gridy = r;
 
         // ---- Row 0
         g.gridx = 0; asLabel.accept(g);
-        form.add(label("Period Start:"), g);
-
-        g.gridx = 1; asField.accept(g);
-        form.add(tfStart, g);
-
-        g.gridx = 2; asLabel.accept(g);
-        form.add(label("Period End:"), g);
-
-        g.gridx = 3; asField.accept(g);
-        form.add(tfEnd, g);
-
-        // ---- Row 1
-        g.gridy++;
-        g.gridx = 0; asLabel.accept(g);
         form.add(lblPayPeriod, g);
 
         g.gridx = 1; asField.accept(g);
@@ -501,7 +487,7 @@ g.gridx = 0; g.gridy = r;
         form.add(cbPeriod, g);
         g.gridwidth = 1;
 
-                // ---- Row 2
+        // ---- Row 1
         g.gridy++;
         g.gridx = 0; asLabel.accept(g);
         form.add(label("OT Multiplier:"), g);
@@ -515,7 +501,7 @@ g.gridx = 0; g.gridy = r;
         g.gridx = 3; asField.accept(g);
         form.add(tfOTRateOverride, g);
 
-        // ---- Row 3
+        // ---- Row 2
         g.gridy++;
 
         g.gridx = 0; asLabel.accept(g);
@@ -555,7 +541,7 @@ g.gridx = 0; g.gridy = r;
         btnRow.add(btnPDF);
         btnRow.add(btnSend);
 
-        // ---- Row 4 (Options + Buttons)
+        // ---- Row 3 (Options + Buttons)
         g.gridy++;
         g.insets = new Insets(6, 10, 16, 10);
 

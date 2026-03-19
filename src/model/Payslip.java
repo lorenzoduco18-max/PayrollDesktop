@@ -76,6 +76,8 @@ public class Payslip {
     public double cashAdvanceDeduction;
     public double smartBillingDeduction;
     public double otherDeduction;
+    public String cashAdvanceNote;
+    public String otherDeductionNote;
     public String deductionNote;
 
     // ✅ Statutory deductions (employee share)

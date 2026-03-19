@@ -557,9 +557,12 @@ public class PDFUtil {
                         new String[]{"deductions","deduction","totalDeductions","totalDeduction","total_deductions"},
                         new String[]{"totaldeduction","total_deductions","deductions"});
                 if (deductions == 0) deductions = cashAdv + smartBill + otherDed + sss + pagibig + philhealth;
-                String dedNote = getStringSmart(p,
-                        new String[]{"deductionNote","note","remarks","dedRemarks","deductionRemarks"},
-                        new String[]{"deductionnote","note","remarks"});
+                String cashAdvNote = getStringSmart(p,
+                        new String[]{"cashAdvanceNote","cashAdvNote","cashNote"},
+                        new String[]{"cashadvancenote","cashnote"});
+                String otherDedNote = getStringSmart(p,
+                        new String[]{"otherDeductionNote","othersNote","otherNote"},
+                        new String[]{"otherdeductionnote","othersnote","othernote"});
 
                 float dY = dBodyTop - H_ROW;
 
@@ -584,10 +587,11 @@ public class PDFUtil {
 deductionRowAmountBold(cs, fonts, dedX, dColAmt, dColRem, dY, "TOTAL DEDUCTIONS", deductions, fonts.isUnicode);
                 dY -= H_ROW; line(cs, dedX, dY, dedX + dedW, dY, 1f);
 
-                // Cash Advance remark ONLY (no 'NOTE:' label). Keep it strictly on the Cash Advance row.
-                // We print at the same baseline as the Cash Advance row text, and limit to 1 line so it won't spill to SMART Billing.
-                textWrap(cs, fonts.reg, FS_SMALL, C_BLACK, safe(dedNote),
+                // Cash Advance and Others remarks on their own rows.
+                textWrap(cs, fonts.reg, FS_SMALL, C_BLACK, (cashAdv > 0 ? safe(cashAdvNote) : ""),
                         dColRem + 4, dBodyTop - H_ROW - 11, (dedX + dedW) - (dColRem + 6), 1);
+                textWrap(cs, fonts.reg, FS_SMALL, C_BLACK, (otherDed > 0 ? safe(otherDedNote) : ""),
+                        dColRem + 4, dBodyTop - (H_ROW * 6) - 11, (dedX + dedW) - (dColRem + 6), 1);
 
                 y -= (tablesH + 8);
 

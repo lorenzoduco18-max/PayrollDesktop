@@ -94,8 +94,8 @@ public class LoginFrame extends JFrame {
     private static final int CARD_H = 375;
     private static final int CARD_PAD = 14;
 
-    private static final int LOGO_W = 92;
-    private static final int LOGO_H = 66;
+    private static final int LOGO_W = 70;
+    private static final int LOGO_H = 50;
 
     private static final int FIELD_H = 26;
     private static final int FIELD_W = 230;
@@ -159,36 +159,7 @@ public LoginFrame() {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(new EmptyBorder(CARD_PAD, CARD_PAD, CARD_PAD, CARD_PAD));
 
-        RainbowLabel title = new RainbowLabel("IT\'S TIME TO EXPLORE!", SwingConstants.CENTER);
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);        // Travel / cursive font with tighter spacing so it FITS
-        String[] travelFonts = {
-                "Pacifico",
-                "Segoe Script",
-                "Lucida Handwriting",
-                "Brush Script MT",
-                "Comic Sans MS",
-                Font.SANS_SERIF
-        };
-
-        Font chosen = null;
-        for (String f : travelFonts) {
-            Font test = new Font(f, Font.PLAIN, 18); // 🔽 slightly smaller
-            if (test.getFamily().equals(f)) {
-                chosen = test;
-                break;
-            }
-        }
-        if (chosen == null) {
-            chosen = new Font(Font.SANS_SERIF, Font.BOLD, 18);
-        }
-
-        Map<TextAttribute, Object> atts = new HashMap<>();
-        atts.put(TextAttribute.KERNING, TextAttribute.KERNING_ON);
-        atts.put(TextAttribute.TRACKING, 0.045f); // 🔽 LESS spacing so it fits
-
-        title.setFont(chosen.deriveFont(atts));        // ✅ Make sure label never exceeds card width
-        title.setMaximumSize(new Dimension(CARD_W - 20, 34));
-
+        
         ShadowLabel sub = new ShadowLabel("Please login to continue", SwingConstants.CENTER);
         
         
@@ -197,8 +168,7 @@ public LoginFrame() {
         sub.setFont(sub.getFont().deriveFont(Font.PLAIN, 11.5f));
         sub.setForeground(Color.BLACK);
 
-        card.add(title);
-        card.add(Box.createVerticalStrut(2));
+                card.add(Box.createVerticalStrut(2));
         card.add(sub);
         card.add(Box.createVerticalStrut(8));
 
@@ -294,21 +264,42 @@ card.add(versionLabel);wrapper.add(card);
         return wrapper;
     }
 
-    private JLabel buildLogo() {
-        JLabel logo = new JLabel();
-        logo.setAlignmentX(Component.CENTER_ALIGNMENT);
+    
+    private JComponent buildLogo() {
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
 
-        ImageIcon icon = loadLogoIcon();
-        if (icon != null) {
-            Image scaled = scaleImageKeepAspect(icon.getImage(), LOGO_W, LOGO_H);
-            logo.setIcon(new ImageIcon(scaled));
-        } else {
-            logo.setText("Exploring Bearcat");
-            logo.setFont(logo.getFont().deriveFont(Font.BOLD, 15f));
-            logo.setForeground(new Color(25, 25, 25));
+        JLabel logo1 = new JLabel();
+        JLabel logo2 = new JLabel();
+
+        ImageIcon icon1 = loadImage("/EBCTLOGO.png");
+        ImageIcon icon2 = loadImage("/ETIMELOGO.png");
+
+        if (icon1 != null) {
+            Image scaled1 = scaleImageKeepAspect(icon1.getImage(), LOGO_W, LOGO_H);
+            logo1.setIcon(new ImageIcon(scaled1));
         }
-        return logo;
+
+        if (icon2 != null) {
+            Image scaled2 = scaleImageKeepAspect(icon2.getImage(), LOGO_W, LOGO_H);
+            logo2.setIcon(new ImageIcon(scaled2));
+        }
+
+        panel.add(logo1);
+        panel.add(Box.createHorizontalStrut(10));
+        panel.add(logo2);
+
+        return panel;
     }
+
+    private ImageIcon loadImage(String path) {
+        URL url = getClass().getResource(path);
+        if (url != null) return new ImageIcon(url);
+        return null;
+    }
+
 
     private ImageIcon loadLogoIcon() {
     	String[] candidates = {
