@@ -106,6 +106,7 @@ public class PayrollRunDialog extends JDialog {
     // ✅ Deductions state (used for preview breakdown)
     private boolean useCash = false, useSmart = false, useOthers = false;
     private String cashAmt = "0", smartAmt = "0", othersAmt = "0";
+    private String cashNote = "";
     private String othersNote = "";
 
     // ✅ Statutory deductions (PH) state
@@ -202,6 +203,8 @@ public class PayrollRunDialog extends JDialog {
         });
 
         cbEmp.addActionListener(e -> {
+            resetPayrollInputsForSelectedEmployee();
+
             // Rebuild pay periods based on selected employee's pay type.
             initPeriodCombo();
             setPeriodToToday();
@@ -211,7 +214,8 @@ public class PayrollRunDialog extends JDialog {
             setHolidayUiEnabled(!isSelectedEmployeeMonthly());
 
             refreshHolidayCount();
-            if (chkAutoFromLogs.isSelected() && !manualOverride) autoFillFromTimeLogs(false);
+            manualOverride = false;
+            if (chkAutoFromLogs.isSelected()) autoFillFromTimeLogs(false);
         });
 
         cbPeriod.addActionListener(e -> {
@@ -967,9 +971,10 @@ private static class DurationDocumentFilter extends DocumentFilter {
         JTextField tfPagibig = new JTextField(pagibigAmt);
         JTextField tfPhilHealth = new JTextField(philhealthAmt);
 
-        JTextField tfNote   = new JTextField(othersNote);
+        JTextField tfCashNote   = new JTextField(cashNote);
+        JTextField tfOthersNote   = new JTextField(othersNote);
 
-        for (JTextField tf : new JTextField[]{tfCash, tfSmart, tfOthers, tfSSS, tfPagibig, tfPhilHealth, tfNote}) {
+        for (JTextField tf : new JTextField[]{tfCash, tfSmart, tfOthers, tfSSS, tfPagibig, tfPhilHealth, tfCashNote, tfOthersNote}) {
             Theme.styleInput(tf);
             tf.setPreferredSize(new Dimension(0, 34));
             tf.setMinimumSize(new Dimension(0, 34));
@@ -994,7 +999,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
         tfPagibig.setEnabled(usePagibig);
         tfPhilHealth.setEnabled(usePhilHealth);
 
-        tfNote.setEnabled(true);
+        tfCashNote.setEnabled(useCash);
+        tfOthersNote.setEnabled(useOthers);
 
         JLabel peso1 = new JLabel("₱");
         JLabel peso2 = new JLabel("₱");
@@ -1046,6 +1052,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
             tfCash.setEnabled(useCash);
             tfSmart.setEnabled(useSmart);
             tfOthers.setEnabled(useOthers);
+            tfCashNote.setEnabled(useCash);
+            tfOthersNote.setEnabled(useOthers);
 
             tfSSS.setEnabled(useSSS);
             tfPagibig.setEnabled(usePagibig);
@@ -1059,7 +1067,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
             pagibigAmt = tfPagibig.getText();
             philhealthAmt = tfPhilHealth.getText();
 
-            othersNote = tfNote.getText();
+            cashNote = tfCashNote.getText();
+            othersNote = tfOthersNote.getText();
 
             // Try to auto-compute statutory deductions using the latest computed gross (if available).
             double grossForAuto = (lastPayslip != null ? lastPayslip.grossPay : 0.0);
@@ -1106,7 +1115,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
         tfSSS.getDocument().addDocumentListener(dl);
         tfPagibig.getDocument().addDocumentListener(dl);
         tfPhilHealth.getDocument().addDocumentListener(dl);
-        tfNote.getDocument().addDocumentListener(dl);
+        tfCashNote.getDocument().addDocumentListener(dl);
+        tfOthersNote.getDocument().addDocumentListener(dl);
 
         // ✅ If user manually types an amount, auto-enable the checkbox (so it is counted)
         DocumentListener autoCheck = new DocumentListener() {
@@ -1143,7 +1153,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
             else if (tfSSS.isEnabled()) tfSSS.requestFocusInWindow();
             else if (tfPagibig.isEnabled()) tfPagibig.requestFocusInWindow();
             else if (tfPhilHealth.isEnabled()) tfPhilHealth.requestFocusInWindow();
-            else tfNote.requestFocusInWindow();
+            else if (tfCashNote.isEnabled()) tfCashNote.requestFocusInWindow();
+            else if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
         });
 
         tfSmart.addActionListener(e -> {
@@ -1152,7 +1163,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
             else if (tfSSS.isEnabled()) tfSSS.requestFocusInWindow();
             else if (tfPagibig.isEnabled()) tfPagibig.requestFocusInWindow();
             else if (tfPhilHealth.isEnabled()) tfPhilHealth.requestFocusInWindow();
-            else tfNote.requestFocusInWindow();
+            else if (tfCashNote.isEnabled()) tfCashNote.requestFocusInWindow();
+            else if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
         });
 
         tfOthers.addActionListener(e -> {
@@ -1160,7 +1172,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
             if (tfSSS.isEnabled()) tfSSS.requestFocusInWindow();
             else if (tfPagibig.isEnabled()) tfPagibig.requestFocusInWindow();
             else if (tfPhilHealth.isEnabled()) tfPhilHealth.requestFocusInWindow();
-            else tfNote.requestFocusInWindow();
+            else if (tfCashNote.isEnabled()) tfCashNote.requestFocusInWindow();
+            else if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
         });
 
         // ✅ Statutory fields
@@ -1168,18 +1181,21 @@ private static class DurationDocumentFilter extends DocumentFilter {
             recalc.run();
             if (tfPagibig.isEnabled()) tfPagibig.requestFocusInWindow();
             else if (tfPhilHealth.isEnabled()) tfPhilHealth.requestFocusInWindow();
-            else tfNote.requestFocusInWindow();
+            else if (tfCashNote.isEnabled()) tfCashNote.requestFocusInWindow();
+            else if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
         });
 
         tfPagibig.addActionListener(e -> {
             recalc.run();
             if (tfPhilHealth.isEnabled()) tfPhilHealth.requestFocusInWindow();
-            else tfNote.requestFocusInWindow();
+            else if (tfCashNote.isEnabled()) tfCashNote.requestFocusInWindow();
+            else if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
         });
 
         tfPhilHealth.addActionListener(e -> {
             recalc.run();
-            tfNote.requestFocusInWindow();
+            if (tfCashNote.isEnabled()) tfCashNote.requestFocusInWindow();
+            else if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
         });
 
 
@@ -1191,38 +1207,54 @@ private static class DurationDocumentFilter extends DocumentFilter {
          recalc.run();
          if (tfPagibig.isEnabled()) tfPagibig.requestFocusInWindow();
          else if (tfPhilHealth.isEnabled()) tfPhilHealth.requestFocusInWindow();
-         else tfNote.requestFocusInWindow();
+         else if (tfCashNote.isEnabled()) tfCashNote.requestFocusInWindow();
+         else if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
      });
 
      tfPagibig.addActionListener(e -> {
          recalc.run();
          if (tfPhilHealth.isEnabled()) tfPhilHealth.requestFocusInWindow();
-         else tfNote.requestFocusInWindow();
+         else if (tfCashNote.isEnabled()) tfCashNote.requestFocusInWindow();
+         else if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
      });
 
      tfPhilHealth.addActionListener(e -> {
          recalc.run();
-         tfNote.requestFocusInWindow();
+         if (tfCashNote.isEnabled()) tfCashNote.requestFocusInWindow();
+         else if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
      });
 
      deductionsPanel.add(row.apply(new Object[]{cbCash, tfCash, peso1}));
         deductionsPanel.add(Box.createVerticalStrut(6));
 
-        JPanel noteRow = new JPanel(new BorderLayout(10, 0));
-        noteRow.setOpaque(false);
-        noteRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel cashNoteRow = new JPanel(new BorderLayout(10, 0));
+        cashNoteRow.setOpaque(false);
+        cashNoteRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel noteLbl = label("Note:");
-        noteLbl.setPreferredSize(new Dimension(130, 34));
+        JLabel cashNoteLbl = label("Cash Advance Note:");
+        cashNoteLbl.setPreferredSize(new Dimension(130, 34));
 
-        noteRow.add(noteLbl, BorderLayout.WEST);
-        noteRow.add(tfNote, BorderLayout.CENTER);
+        cashNoteRow.add(cashNoteLbl, BorderLayout.WEST);
+        cashNoteRow.add(tfCashNote, BorderLayout.CENTER);
 
-        deductionsPanel.add(noteRow);
+        deductionsPanel.add(cashNoteRow);
         deductionsPanel.add(Box.createVerticalStrut(10));
         deductionsPanel.add(row.apply(new Object[]{cbSmart, tfSmart, peso2}));
         deductionsPanel.add(Box.createVerticalStrut(6));
         deductionsPanel.add(row.apply(new Object[]{cbOthers, tfOthers, peso3}));
+        deductionsPanel.add(Box.createVerticalStrut(6));
+
+        JPanel othersNoteRow = new JPanel(new BorderLayout(10, 0));
+        othersNoteRow.setOpaque(false);
+        othersNoteRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel othersNoteLbl = label("Others Note:");
+        othersNoteLbl.setPreferredSize(new Dimension(130, 34));
+
+        othersNoteRow.add(othersNoteLbl, BorderLayout.WEST);
+        othersNoteRow.add(tfOthersNote, BorderLayout.CENTER);
+
+        deductionsPanel.add(othersNoteRow);
         deductionsPanel.add(Box.createVerticalStrut(10));
 
         // ✅ Statutory deductions rows
@@ -1237,8 +1269,13 @@ private static class DurationDocumentFilter extends DocumentFilter {
 
         JButton btnClear = new JButton("Clear");
         JButton btnDone = new JButton("Done");
-        // ⏎ Enter on Note = Done
-        tfNote.addActionListener(e -> {
+        // ⏎ Enter on Notes = Done
+        tfCashNote.addActionListener(e -> {
+            recalc.run();
+            if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
+            else btnDone.doClick();
+        });
+        tfOthersNote.addActionListener(e -> {
             recalc.run();
             btnDone.doClick();
         });
@@ -1254,7 +1291,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
             tfCash.setText("0");
             tfSmart.setText("0");
             tfOthers.setText("0");
-            tfNote.setText("");
+            tfCashNote.setText("");
+            tfOthersNote.setText("");
             recalc.run();
         });
 
@@ -1569,6 +1607,45 @@ private static class DurationDocumentFilter extends DocumentFilter {
         return l;
     }
 
+
+    private void resetPayrollInputsForSelectedEmployee() {
+        suppressManualFlag = true;
+        try {
+            tfDeductions.setText("0");
+            tfDeductions.setCaretPosition(0);
+            tfAdditionalEarnings.setText("0");
+            tfAdditionalEarnings.setCaretPosition(0);
+
+            useCash = false;
+            useSmart = false;
+            useOthers = false;
+            cashAmt = "0";
+            smartAmt = "0";
+            othersAmt = "0";
+            cashNote = "";
+            othersNote = "";
+
+            useSSS = false;
+            usePagibig = false;
+            usePhilHealth = false;
+            sssAmt = "0";
+            pagibigAmt = "0";
+            philhealthAmt = "0";
+
+            useIncentives = false;
+            useThirteenthMonth = false;
+            useBonus = false;
+            incentivesAmt = "0";
+            thirteenthMonthAmt = "0";
+            bonusAmt = "0";
+
+            lastPayslip = null;
+            preview.setText("");
+        } finally {
+            suppressManualFlag = false;
+        }
+    }
+
     // ================= PERIODS =================
     private String getSelectedEmployeePayTypeSafe() {
         try {
@@ -1861,7 +1938,9 @@ void initPeriodCombo() {
             p.pagibigDeduction = (usePagibig ? pagibigVal : 0.0);
             p.philhealthDeduction = (usePhilHealth ? philhealthVal : 0.0);
 
-            p.deductionNote = (othersNote == null ? "" : othersNote.trim());
+            p.cashAdvanceNote = (cashNote == null ? "" : cashNote.trim());
+            p.otherDeductionNote = (othersNote == null ? "" : othersNote.trim());
+            p.deductionNote = "";
 
             // ✅ finalize total deductions + net pay (ensures statutory deductions affect Net Pay)
             p.deductions = p.cashAdvanceDeduction + p.smartBillingDeduction + p.otherDeduction

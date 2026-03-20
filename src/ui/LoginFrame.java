@@ -94,8 +94,8 @@ public class LoginFrame extends JFrame {
     private static final int CARD_H = 375;
     private static final int CARD_PAD = 14;
 
-    private static final int LOGO_W = 70;
-    private static final int LOGO_H = 50;
+    private static final int LOGO_W = 102;
+    private static final int LOGO_H = 76;
 
     private static final int FIELD_H = 26;
     private static final int FIELD_W = 230;
