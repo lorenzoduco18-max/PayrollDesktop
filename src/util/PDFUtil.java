@@ -517,8 +517,10 @@ public class PDFUtil {
 
                 float dBodyTop = dedTop - H_HDR;
 
-                float dColAmt = dedX + dedW * 0.55f;
-                float dColRem = dedX + dedW * 0.78f;
+                // Wider REMARKS column without changing any deduction logic:
+                // DESCR 40% / AMOUNT 20% / REMARKS 40%
+                float dColAmt = dedX + dedW * 0.40f;
+                float dColRem = dedX + dedW * 0.60f;
 
              // ✅ vertical lines should NOT cross the gray header (start below header)
                 line(cs, dColAmt, dBodyTop, dColAmt, dedTop - tablesH, 1f);
@@ -560,6 +562,7 @@ public class PDFUtil {
                 String cashAdvNote = getStringSmart(p,
                         new String[]{"cashAdvanceNote","cashAdvNote","cashNote"},
                         new String[]{"cashadvancenote","cashnote"});
+                // Keep Others note strictly separate from generic / cash notes.
                 String otherDedNote = getStringSmart(p,
                         new String[]{"otherDeductionNote","othersNote","otherNote"},
                         new String[]{"otherdeductionnote","othersnote","othernote"});
@@ -587,11 +590,11 @@ public class PDFUtil {
 deductionRowAmountBold(cs, fonts, dedX, dColAmt, dColRem, dY, "TOTAL DEDUCTIONS", deductions, fonts.isUnicode);
                 dY -= H_ROW; line(cs, dedX, dY, dedX + dedW, dY, 1f);
 
-                // Cash Advance and Others remarks on their own rows.
-                textWrap(cs, fonts.reg, FS_SMALL, C_BLACK, (cashAdv > 0 ? safe(cashAdvNote) : ""),
+                // Remarks stay on their matching deduction rows only.
+                textWrap(cs, fonts.reg, FS_SMALL, C_BLACK, safe(cashAdvNote),
                         dColRem + 4, dBodyTop - H_ROW - 11, (dedX + dedW) - (dColRem + 6), 1);
-                textWrap(cs, fonts.reg, FS_SMALL, C_BLACK, (otherDed > 0 ? safe(otherDedNote) : ""),
-                        dColRem + 4, dBodyTop - (H_ROW * 6) - 11, (dedX + dedW) - (dColRem + 6), 1);
+                textWrap(cs, fonts.reg, FS_SMALL, C_BLACK, safe(otherDedNote),
+                        dColRem + 4, dBodyTop - H_ROW * 6 - 11, (dedX + dedW) - (dColRem + 6), 1);
 
                 y -= (tablesH + 8);
 
@@ -654,18 +657,41 @@ deductionRowAmountBold(cs, fonts, dedX, dColAmt, dColRem, dY, "TOTAL DEDUCTIONS"
 
     private static FontPack loadFonts(PDDocument doc) {
         try {
-            PDFont reg = loadTTF(doc, "/fonts/DejaVuSans.ttf");
-            PDFont bold = loadTTF(doc, "/fonts/DejaVuSans-Bold.ttf");
+            PDFont reg = loadTTF(doc,
+                    "/fonts/DejaVuSans.ttf",
+                    "fonts/DejaVuSans.ttf",
+                    "src/main/resources/fonts/DejaVuSans.ttf",
+                    "src/fonts/DejaVuSans.ttf",
+                    "resources/fonts/DejaVuSans.ttf");
+            PDFont bold = loadTTF(doc,
+                    "/fonts/DejaVuSans-Bold.ttf",
+                    "fonts/DejaVuSans-Bold.ttf",
+                    "src/main/resources/fonts/DejaVuSans-Bold.ttf",
+                    "src/fonts/DejaVuSans-Bold.ttf",
+                    "resources/fonts/DejaVuSans-Bold.ttf");
             if (reg != null && bold != null) return new FontPack(reg, bold, true);
         } catch (Exception ignored) {}
         return new FontPack(PDType1Font.HELVETICA, PDType1Font.HELVETICA_BOLD, false);
     }
 
-    private static PDFont loadTTF(PDDocument doc, String path) throws IOException {
-        try (InputStream in = PDFUtil.class.getResourceAsStream(path)) {
-            if (in == null) return null;
-            return PDType0Font.load(doc, in, true);
+    private static PDFont loadTTF(PDDocument doc, String... paths) throws IOException {
+        if (paths == null) return null;
+
+        for (String path : paths) {
+            if (path == null || path.isBlank()) continue;
+
+            // 1) Try classpath resource
+            try (InputStream in = PDFUtil.class.getResourceAsStream(path)) {
+                if (in != null) return PDType0Font.load(doc, in, true);
+            } catch (Exception ignored) {}
+
+            // 2) Try direct file path
+            try {
+                File f = new File(path);
+                if (f.exists() && f.isFile()) return PDType0Font.load(doc, f);
+            } catch (Exception ignored) {}
         }
+        return null;
     }
     
  // ✅ Draw image keeping aspect ratio and RIGHT-aligned

@@ -4,6 +4,8 @@ import com.formdev.flatlaf.FlatClientProperties;
 import dao.EmployeeDAO;
 import model.Employee;
 
+import java.awt.Font;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -63,24 +65,20 @@ public class EmployeesPanel extends JPanel {
                     java.awt.Color selBg = getSelectionBackground();
                     java.awt.Color selFg = getSelectionForeground();
                     if (selBg == null || (selBg.getRed() > 230 && selBg.getGreen() > 230 && selBg.getBlue() > 230)) {
-                        selBg = new java.awt.Color(46, 111, 206);
+                        selBg = new java.awt.Color(132, 178, 241);
                     }
                     if (selFg == null) selFg = java.awt.Color.WHITE;
 
                     if (isRowSelected(row)) {
                         jc.setBackground(selBg);
                         jc.setForeground(selFg);
-
-                        // Outline around the selected row
-                        int lastCol = getColumnCount() - 1;
-                        int top = 2, left = 0, bottom = 2, right = 0;
-                        if (col == 0) left = 2;
-                        if (col == lastCol) right = 2;
-                        jc.setBorder(javax.swing.BorderFactory.createMatteBorder(top, left, bottom, right, selBg));
+                        jc.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
                     } else {
-                        // Non-selected: FORCE readable text
-                        jc.setForeground(java.awt.Color.BLACK);
-                        jc.setBorder(null);
+                        // Non-selected: keep text readable, but do not overwrite custom Status colors
+                        if (col != 6) {
+                            jc.setForeground(java.awt.Color.BLACK);
+                        }
+                        jc.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
                     }
                 }
                 return c;
@@ -715,7 +713,11 @@ private void applyTableStyling() {
         for (int c = 0; c < table.getColumnModel().getColumnCount(); c++) {
             // Column 7 is EMP_ID (hidden)
             if (c == 7) continue;
-            table.getColumnModel().getColumn(c).setCellRenderer(zebraCenter);
+            if (c == 6) {
+                table.getColumnModel().getColumn(c).setCellRenderer(new StatusBadgeRenderer(zebraEven, zebraOdd));
+            } else {
+                table.getColumnModel().getColumn(c).setCellRenderer(zebraCenter);
+            }
         }
 
 // Center header text + stronger divider lines
@@ -749,4 +751,67 @@ private void applyTableStyling() {
         });
     }
 
+}
+
+class StatusBadgeRenderer extends DefaultTableCellRenderer {
+    private final Color zebraEven;
+    private final Color zebraOdd;
+
+    StatusBadgeRenderer(Color zebraEven, Color zebraOdd) {
+        this.zebraEven = zebraEven;
+        this.zebraOdd = zebraOdd;
+        setHorizontalAlignment(SwingConstants.CENTER);
+    }
+
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                   boolean hasFocus, int row, int column) {
+        String status = value == null ? "" : value.toString().trim().toUpperCase();
+
+        // IMPORTANT:
+        // Use row selection state directly so the status cell always joins the same blue row.
+        // No pill, no upper layer, no floating badge when the row is selected.
+        if (table.isRowSelected(row)) {
+            JPanel flatCell = new JPanel(new BorderLayout());
+            flatCell.setOpaque(true);
+            flatCell.setBackground(table.getSelectionBackground());
+            flatCell.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+
+            JLabel flatText = new JLabel(status, SwingConstants.CENTER);
+            flatText.setOpaque(false);
+            flatText.setForeground(table.getSelectionForeground());
+            flatText.setFont(flatText.getFont().deriveFont(Font.BOLD, 12f));
+
+            flatCell.add(flatText, BorderLayout.CENTER);
+            return flatCell;
+        }
+
+        Color rowBase = (row % 2 == 0) ? zebraEven : zebraOdd;
+
+        JPanel outer = new JPanel(new java.awt.GridBagLayout());
+        outer.setOpaque(true);
+        outer.setBackground(rowBase);
+        outer.setBorder(BorderFactory.createEmptyBorder(3, 8, 3, 8));
+
+        JLabel pill = new JLabel(status);
+        pill.setOpaque(true);
+        pill.setHorizontalAlignment(SwingConstants.CENTER);
+        pill.setFont(pill.getFont().deriveFont(Font.BOLD, 12f));
+        pill.putClientProperty(FlatClientProperties.STYLE, "arc:999");
+        pill.setBorder(BorderFactory.createEmptyBorder(7, 22, 7, 22));
+
+        if ("ACTIVE".equals(status)) {
+            pill.setForeground(new Color(18, 120, 72));
+            pill.setBackground(new Color(232, 247, 238));
+        } else if ("INACTIVE".equals(status)) {
+            pill.setForeground(new Color(185, 52, 52));
+            pill.setBackground(new Color(252, 237, 237));
+        } else {
+            pill.setForeground(new Color(83, 90, 98));
+            pill.setBackground(new Color(242, 244, 247));
+        }
+
+        outer.add(pill);
+        return outer;
+    }
 }

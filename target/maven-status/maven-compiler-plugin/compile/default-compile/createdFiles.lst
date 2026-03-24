@@ -37,6 +37,7 @@ ui\DashboardFrame$RoundedPanel.class
 ui\LoginFrame$TabletButton$Type.class
 ui\LogbookPanel.class
 ui\PayrollRunDialog$2.class
+ui\StatusBadgeRenderer.class
 ui\EmployeesPanel$5.class
 ui\EmployeesDialog$1.class
 ui\EmployeeTimePanel$PairRow.class

@@ -1,6 +1,6 @@
 {
   "name": "ebet-payroll",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "EBET Payroll desktop application",
   "author": "EBET",
   "main": "index.js",
@@ -23,7 +23,7 @@
     "shelljs": "^0.8.4"
   },
   "jdeploy": {
-    "jar": "target/payroll-desktop-1.0.17.jar",
+    "jar": "target/payroll-desktop-1.0.18.jar",
     "javaVersion": "17",
     "jdk": false,
     "javafx": false,

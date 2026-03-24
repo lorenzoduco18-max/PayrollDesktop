@@ -521,7 +521,7 @@ g.gridx = 0; g.gridy = r;
         form.add(tfAdditionalEarnings, g);
 
         JButton btnCompute = new JButton("Compute Payslip");
-        JButton btnPDF = new JButton("Generate PDF");
+        JButton btnPDF = new JButton("Preview PDF");
         JButton btnSend = new JButton("Upload Payslip");
 
         Theme.stylePrimaryButton(btnCompute);
@@ -972,7 +972,7 @@ private static class DurationDocumentFilter extends DocumentFilter {
         JTextField tfPhilHealth = new JTextField(philhealthAmt);
 
         JTextField tfCashNote   = new JTextField(cashNote);
-        JTextField tfOthersNote   = new JTextField(othersNote);
+        JTextField tfOthersNote = new JTextField(othersNote);
 
         for (JTextField tf : new JTextField[]{tfCash, tfSmart, tfOthers, tfSSS, tfPagibig, tfPhilHealth, tfCashNote, tfOthersNote}) {
             Theme.styleInput(tf);
@@ -1052,12 +1052,15 @@ private static class DurationDocumentFilter extends DocumentFilter {
             tfCash.setEnabled(useCash);
             tfSmart.setEnabled(useSmart);
             tfOthers.setEnabled(useOthers);
-            tfCashNote.setEnabled(useCash);
-            tfOthersNote.setEnabled(useOthers);
 
             tfSSS.setEnabled(useSSS);
             tfPagibig.setEnabled(usePagibig);
             tfPhilHealth.setEnabled(usePhilHealth);
+
+            tfCashNote.setEnabled(useCash);
+            tfOthersNote.setEnabled(useOthers);
+            if (!useCash) tfCashNote.setText("");
+            if (!useOthers) tfOthersNote.setText("");
 
             cashAmt = tfCash.getText();
             smartAmt = tfSmart.getText();
@@ -1067,8 +1070,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
             pagibigAmt = tfPagibig.getText();
             philhealthAmt = tfPhilHealth.getText();
 
-            cashNote = tfCashNote.getText();
-            othersNote = tfOthersNote.getText();
+            cashNote = useCash ? tfCashNote.getText() : "";
+            othersNote = useOthers ? tfOthersNote.getText() : "";
 
             // Try to auto-compute statutory deductions using the latest computed gross (if available).
             double grossForAuto = (lastPayslip != null ? lastPayslip.grossPay : 0.0);
@@ -1269,7 +1272,6 @@ private static class DurationDocumentFilter extends DocumentFilter {
 
         JButton btnClear = new JButton("Clear");
         JButton btnDone = new JButton("Done");
-        // ⏎ Enter on Notes = Done
         tfCashNote.addActionListener(e -> {
             recalc.run();
             if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
@@ -1288,9 +1290,15 @@ private static class DurationDocumentFilter extends DocumentFilter {
             cbCash.setSelected(false);
             cbSmart.setSelected(false);
             cbOthers.setSelected(false);
+            cbSSS.setSelected(false);
+            cbPagibig.setSelected(false);
+            cbPhilHealth.setSelected(false);
             tfCash.setText("0");
             tfSmart.setText("0");
             tfOthers.setText("0");
+            tfSSS.setText("0");
+            tfPagibig.setText("0");
+            tfPhilHealth.setText("0");
             tfCashNote.setText("");
             tfOthersNote.setText("");
             recalc.run();
@@ -1499,6 +1507,27 @@ private static class DurationDocumentFilter extends DocumentFilter {
             tfBonus.setText("0");
             recalc.run();
         });
+
+        // Enter-to-next behavior for Additional Earnings:
+        // move to the next enabled field, and close when there is no next field left.
+        tfIncentivesPopup.addActionListener(e -> {
+            recalc.run();
+            if (tfThirteenth.isEnabled()) tfThirteenth.requestFocusInWindow();
+            else if (tfBonus.isEnabled()) tfBonus.requestFocusInWindow();
+            else btnDone.doClick();
+        });
+
+        tfThirteenth.addActionListener(e -> {
+            recalc.run();
+            if (tfBonus.isEnabled()) tfBonus.requestFocusInWindow();
+            else btnDone.doClick();
+        });
+
+        tfBonus.addActionListener(e -> {
+            recalc.run();
+            btnDone.doClick();
+        });
+
         btnDone.addActionListener(e -> {
             recalc.run();
             earningsPopup.setVisible(false);
@@ -1638,6 +1667,11 @@ private static class DurationDocumentFilter extends DocumentFilter {
             incentivesAmt = "0";
             thirteenthMonthAmt = "0";
             bonusAmt = "0";
+
+            deductionsPopup = null;
+            deductionsPanel = null;
+            earningsPopup = null;
+            earningsPanel = null;
 
             lastPayslip = null;
             preview.setText("");
@@ -1905,9 +1939,9 @@ void initPeriodCombo() {
             );
 
             // ✅ Additional earnings
-            double incentives = useIncentives ? parseDouble(incentivesAmt) : 0.0;
-            double thirteenthMonthPay = useThirteenthMonth ? parseDouble(thirteenthMonthAmt) : 0.0;
-            double bonusPay = useBonus ? parseDouble(bonusAmt) : 0.0;
+            double incentives = useIncentives ? parseMoney(incentivesAmt) : 0.0;
+            double thirteenthMonthPay = useThirteenthMonth ? parseMoney(thirteenthMonthAmt) : 0.0;
+            double bonusPay = useBonus ? parseMoney(bonusAmt) : 0.0;
             p.incentives = incentives;
             p.thirteenthMonthPay = thirteenthMonthPay;
             p.bonusPay = bonusPay;
@@ -1938,8 +1972,8 @@ void initPeriodCombo() {
             p.pagibigDeduction = (usePagibig ? pagibigVal : 0.0);
             p.philhealthDeduction = (usePhilHealth ? philhealthVal : 0.0);
 
-            p.cashAdvanceNote = (cashNote == null ? "" : cashNote.trim());
-            p.otherDeductionNote = (othersNote == null ? "" : othersNote.trim());
+            p.cashAdvanceNote = (useCash && cashNote != null) ? cashNote.trim() : "";
+            p.otherDeductionNote = (useOthers && othersNote != null) ? othersNote.trim() : "";
             p.deductionNote = "";
 
             // ✅ finalize total deductions + net pay (ensures statutory deductions affect Net Pay)
@@ -2343,27 +2377,39 @@ void initPeriodCombo() {
     }
 
     private String buildDeductionBreakdownHtml(Payslip p) {
+        String cashNote = (p.cashAdvanceNote == null) ? "" : p.cashAdvanceNote.trim();
+        String otherNote = (p.otherDeductionNote == null) ? "" : p.otherDeductionNote.trim();
+
         boolean any = (p.cashAdvanceDeduction > 0)
                 || (p.smartBillingDeduction > 0)
                 || (p.otherDeduction > 0)
                 || (p.sssDeduction > 0)
                 || (p.pagibigDeduction > 0)
                 || (p.philhealthDeduction > 0)
-                || (p.deductionNote != null && !p.deductionNote.trim().isEmpty());
+                || !cashNote.isEmpty()
+                || !otherNote.isEmpty();
 
         if (!any) return "";
 
         StringBuilder sb = new StringBuilder();
         sb.append("<div class='dedBreak'>");
 
-        if (p.cashAdvanceDeduction > 0) {
-            sb.append("• Cash Advance: <b>").append(esc(Money.php(p.cashAdvanceDeduction))).append("</b><br>");
+        if (p.cashAdvanceDeduction > 0 || !cashNote.isEmpty()) {
+            sb.append("• Cash Advance: <b>").append(esc(Money.php(p.cashAdvanceDeduction))).append("</b>");
+            if (!cashNote.isEmpty()) {
+                sb.append(" <span style='color:#9ca3af'>[").append(esc(cashNote)).append("]</span>");
+            }
+            sb.append("<br>");
         }
         if (p.smartBillingDeduction > 0) {
             sb.append("• Smart Billing: <b>").append(esc(Money.php(p.smartBillingDeduction))).append("</b><br>");
         }
-        if (p.otherDeduction > 0) {
-            sb.append("• Others: <b>").append(esc(Money.php(p.otherDeduction))).append("</b><br>");
+        if (p.otherDeduction > 0 || !otherNote.isEmpty()) {
+            sb.append("• Others: <b>").append(esc(Money.php(p.otherDeduction))).append("</b>");
+            if (!otherNote.isEmpty()) {
+                sb.append(" <span style='color:#9ca3af'>[").append(esc(otherNote)).append("]</span>");
+            }
+            sb.append("<br>");
         }
 
         if (p.sssDeduction > 0) {
@@ -2374,11 +2420,6 @@ void initPeriodCombo() {
         }
         if (p.philhealthDeduction > 0) {
             sb.append("• PhilHealth: <b>").append(esc(Money.php(p.philhealthDeduction))).append("</b><br>");
-        }
-
-        String note = (p.deductionNote == null) ? "" : p.deductionNote.trim();
-        if (!note.isEmpty()) {
-            sb.append("• Note: <span style='color:#9ca3af'>").append(esc(note)).append("</span><br>");
         }
 
         sb.append("</div>");

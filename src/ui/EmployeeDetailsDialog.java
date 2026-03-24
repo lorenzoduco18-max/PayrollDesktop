@@ -398,7 +398,7 @@ public class EmployeeDetailsDialog extends JDialog {
         workedDatesScroll.setOpaque(false);
 
         // Fixed height so it NEVER changes when chips wrap differently on different machines
-        int workedDatesHeight = 110;
+        int workedDatesHeight = 165;
         workedDatesScroll.setPreferredSize(new Dimension(10, workedDatesHeight));
         workedDatesScroll.setMinimumSize(new Dimension(10, workedDatesHeight));
         workedDatesScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, workedDatesHeight));
@@ -406,7 +406,7 @@ public class EmployeeDetailsDialog extends JDialog {
         workedDatesContent.add(workedDatesScroll, BorderLayout.CENTER);
 
         JComponent workedBox = sectionBox("Worked Dates", new DotIcon(new Color(0x2563EB)), workedDatesContent);
-        workedBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
+        workedBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 245));
 
         stack.add(accountBox);
         stack.add(Box.createVerticalStrut(10));
@@ -612,8 +612,15 @@ public class EmployeeDetailsDialog extends JDialog {
 
         workedDatesWrap.revalidate();
         workedDatesWrap.repaint();
+        workedDatesScroll.getViewport().revalidate();
+        workedDatesScroll.revalidate();
+        workedDatesScroll.repaint();
 
-        SwingUtilities.invokeLater(() -> workedDatesScroll.getVerticalScrollBar().setValue(0));
+        SwingUtilities.invokeLater(() -> {
+            workedDatesWrap.revalidate();
+            workedDatesScroll.getViewport().revalidate();
+            workedDatesScroll.getVerticalScrollBar().setValue(0);
+        });
     }
 
     // 15-day toggle logic (only used when not payroll-wired)
@@ -1005,29 +1012,47 @@ public class EmployeeDetailsDialog extends JDialog {
 
         @Override
         public Dimension getPreferredSize() {
-            Dimension size = super.getPreferredSize();
-            if (getParent() instanceof JViewport viewport) {
-                int width = viewport.getWidth();
-                if (width > 0) {
-                    int x = 0;
-                    int y = 0;
-                    int rowHeight = 0;
-
-                    for (Component c : getComponents()) {
-                        Dimension d = c.getPreferredSize();
-                        if (x + d.width > width) {
-                            x = 0;
-                            y += rowHeight;
-                            rowHeight = 0;
-                        }
-                        x += d.width + 8;
-                        rowHeight = Math.max(rowHeight, d.height);
-                    }
-                    y += rowHeight;
-                    size = new Dimension(width, y + 10);
-                }
+            if (!(getLayout() instanceof FlowLayout flow)) {
+                return super.getPreferredSize();
             }
-            return size;
+
+            int targetWidth = 0;
+            if (getParent() instanceof JViewport viewport) {
+                targetWidth = viewport.getWidth();
+            }
+            if (targetWidth <= 0) {
+                return super.getPreferredSize();
+            }
+
+            Insets insets = getInsets();
+            int availableWidth = Math.max(1, targetWidth - insets.left - insets.right - (flow.getHgap() * 2));
+
+            int x = 0;
+            int y = flow.getVgap();
+            int rowHeight = 0;
+
+            for (Component c : getComponents()) {
+                if (!c.isVisible()) continue;
+
+                Dimension d = c.getPreferredSize();
+
+                if (x > 0 && x + d.width > availableWidth) {
+                    x = 0;
+                    y += rowHeight + flow.getVgap();
+                    rowHeight = 0;
+                }
+
+                if (x == 0) {
+                    x = d.width;
+                } else {
+                    x += flow.getHgap() + d.width;
+                }
+                rowHeight = Math.max(rowHeight, d.height);
+            }
+
+            y += rowHeight + flow.getVgap();
+
+            return new Dimension(targetWidth, y + insets.top + insets.bottom);
         }
 
         @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
