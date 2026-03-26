@@ -180,9 +180,9 @@ public class EmployeeAccountDialog extends JDialog {
         addBlock(card, gc, 1, r++, block("Pay Type *", cmbPayType));
 
         addBlock(card, gc, 0, r, block("First Name *", txtFirst));
-        addBlock(card, gc, 1, r++, block(lblRate, txtRate));
+        addBlock(card, gc, 1, r++, block("Regular Holiday Rate (PHP/day)", txtRegularHolidayRate));
 
-        addBlock(card, gc, 0, r, block("Regular Holiday Rate (PHP/day)", txtRegularHolidayRate));
+        addBlock(card, gc, 0, r, block(lblRate, txtRate));
         addBlock(card, gc, 1, r++, block("Special Holiday Rate (PHP/day)", txtSpecialHolidayRate));
 
         addBlock(card, gc, 0, r, block("Middle Initial", txtMiddle));

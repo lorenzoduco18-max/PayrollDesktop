@@ -4,9 +4,17 @@ import model.Employee;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EmployeeDAO {
+
+    private static final Map<String, Set<String>> COLUMN_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, Boolean> TABLE_CACHE = new ConcurrentHashMap<>();
 
     /* =========================================================
        ✅ Used by LoginFrame: EmployeeDAO.getByUserId(userId)
@@ -703,9 +711,10 @@ public class EmployeeDAO {
     private static String pickEmpIdCol(Connection con) throws Exception {
         if (hasColumn(con, "employees", "emp_id")) return "emp_id";
         if (hasColumn(con, "employees", "id")) return "id";
-        DatabaseMetaData md = con.getMetaData();
-        try (ResultSet rs = md.getColumns(con.getCatalog(), null, "employees", null)) {
-            if (rs.next()) return rs.getString("COLUMN_NAME");
+
+        Set<String> cols = getColumns(con, "employees");
+        for (String col : cols) {
+            return col;
         }
         throw new Exception("Cannot detect employees PK column.");
     }
@@ -764,26 +773,58 @@ public class EmployeeDAO {
 
     private static boolean hasTable(Connection con, String tableName) {
         try {
+            String key = cacheKey(con, tableName);
+            Boolean cached = TABLE_CACHE.get(key);
+            if (cached != null) return cached;
+
             DatabaseMetaData md = con.getMetaData();
-            try (ResultSet rs = md.getTables(con.getCatalog(), null, tableName, new String[]{"TABLE"})) {
-                return rs.next();
+            boolean exists = false;
+            for (String candidate : new String[]{tableName, tableName.toUpperCase(Locale.ROOT), tableName.toLowerCase(Locale.ROOT)}) {
+                try (ResultSet rs = md.getTables(con.getCatalog(), null, candidate, new String[]{"TABLE"})) {
+                    if (rs.next()) {
+                        exists = true;
+                        break;
+                    }
+                }
             }
+            TABLE_CACHE.put(key, exists);
+            return exists;
         } catch (Exception e) {
             return false;
         }
     }
 
     private static boolean hasColumn(Connection con, String table, String column) throws Exception {
+        return getColumns(con, table).contains(column.toLowerCase(Locale.ROOT));
+    }
+
+    private static Set<String> getColumns(Connection con, String table) throws Exception {
+        String key = cacheKey(con, table);
+        Set<String> cached = COLUMN_CACHE.get(key);
+        if (cached != null) return cached;
+
         DatabaseMetaData md = con.getMetaData();
-        try (ResultSet rs = md.getColumns(con.getCatalog(), null, table, column)) {
-            if (rs.next()) return true;
+        Set<String> cols = new HashSet<>();
+        for (String candidate : new String[]{table, table.toUpperCase(Locale.ROOT), table.toLowerCase(Locale.ROOT)}) {
+            try (ResultSet rs = md.getColumns(con.getCatalog(), null, candidate, null)) {
+                while (rs.next()) {
+                    String col = rs.getString("COLUMN_NAME");
+                    if (col != null && !col.isBlank()) {
+                        cols.add(col.toLowerCase(Locale.ROOT));
+                    }
+                }
+            }
+            if (!cols.isEmpty()) break;
         }
-        try (ResultSet rs = md.getColumns(con.getCatalog(), null, table.toUpperCase(), column)) {
-            if (rs.next()) return true;
-        }
-        try (ResultSet rs = md.getColumns(con.getCatalog(), null, table.toLowerCase(), column)) {
-            return rs.next();
-        }
+
+        Set<String> immutable = Set.copyOf(cols);
+        COLUMN_CACHE.put(key, immutable);
+        return immutable;
+    }
+
+    private static String cacheKey(Connection con, String table) throws SQLException {
+        String catalog = con.getCatalog();
+        return (catalog == null ? "" : catalog.toLowerCase(Locale.ROOT)) + ":" + table.toLowerCase(Locale.ROOT);
     }
 
 

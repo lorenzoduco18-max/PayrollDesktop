@@ -1,4 +1,5 @@
 ui\LogbookPanel$RoundedCard.class
+ui\PayrollRunDialog$AutoFillPayload.class
 ui\LoginFrame$AnimatedGradientPanel.class
 ui\EmployeeDetailsDialog$DotIcon.class
 util\PDFUtil$FontPack.class
@@ -16,6 +17,7 @@ ui\LogbookPanel$DigitalTimePickerPanel.class
 ui\LogbookPanel$EmployeeItem.class
 dao\HolidayDAO.class
 ui\EmployeesPanel$7.class
+ui\PayrollRunDialog$14.class
 ui\LoginFrame$2.class
 ui\EmployeeTimePanel$PortalHistoryRow.class
 model\User.class
@@ -39,6 +41,7 @@ ui\LogbookPanel.class
 ui\PayrollRunDialog$2.class
 ui\StatusBadgeRenderer.class
 ui\EmployeesPanel$5.class
+ui\PayrollRunDialog$13.class
 ui\EmployeesDialog$1.class
 ui\EmployeeTimePanel$PairRow.class
 util\Theme$2.class

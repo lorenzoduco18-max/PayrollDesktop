@@ -37,6 +37,20 @@ import java.util.List;
 
 public class PayrollRunDialog extends JDialog {
 
+    private static final class AutoFillPayload {
+        final WorkSummary summary;
+        final boolean monthly;
+        final boolean regularHolidayEnabled;
+        final boolean specialHolidayEnabled;
+
+        AutoFillPayload(WorkSummary summary, boolean monthly, boolean regularHolidayEnabled, boolean specialHolidayEnabled) {
+            this.summary = summary;
+            this.monthly = monthly;
+            this.regularHolidayEnabled = regularHolidayEnabled;
+            this.specialHolidayEnabled = specialHolidayEnabled;
+        }
+    }
+
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final DecimalFormat DF2 = new DecimalFormat("0.##");
 
@@ -69,7 +83,13 @@ public class PayrollRunDialog extends JDialog {
     private boolean suppressManualFlag = false;
 
     // Background worker to prevent UI freeze on Azure when auto-filling from time logs
-    private transient javax.swing.SwingWorker<WorkSummary, Void> autoFillWorker;
+    private transient javax.swing.SwingWorker<AutoFillPayload, Void> autoFillWorker;
+    private transient javax.swing.SwingWorker<List<Employee>, Void> employeeLoadWorker;
+    private transient javax.swing.SwingWorker<Integer, Void> holidayCountWorker;
+    private volatile int autoFillVersion = 0;
+    private volatile int employeeLoadVersion = 0;
+    private volatile int holidayRefreshVersion = 0;
+    private boolean suppressEmployeeSelectionEvents = false;
 
     private final JLabel lblHolidayCount = new JLabel("Holidays in this period: -");
     private final JButton btnReviewHolidays = new JButton("Holidays");
@@ -203,6 +223,7 @@ public class PayrollRunDialog extends JDialog {
         });
 
         cbEmp.addActionListener(e -> {
+            if (suppressEmployeeSelectionEvents) return;
             resetPayrollInputsForSelectedEmployee();
 
             // Rebuild pay periods based on selected employee's pay type.
@@ -643,78 +664,70 @@ g.gridx = 0; g.gridy = r;
         cbEmp.setEnabled(false);
         cbPeriod.setEnabled(false);
 
-        autoFillWorker = new javax.swing.SwingWorker<WorkSummary, Void>() {
+        final int requestVersion = ++autoFillVersion;
+        autoFillWorker = new javax.swing.SwingWorker<AutoFillPayload, Void>() {
             @Override
-            protected WorkSummary doInBackground() throws Exception {
-                return TimeLogDAO.computeWorkSummary(item.empId, s, e);
+            protected AutoFillPayload doInBackground() throws Exception {
+                WorkSummary ws = TimeLogDAO.computeWorkSummary(item.empId, s, e);
+
+                boolean isMonthly = false;
+                boolean hasRegEnabled = false;
+                boolean hasSpecEnabled = false;
+                try {
+                    Employee emp = EmployeeDAO.getById(item.empId);
+                    isMonthly = (emp != null && emp.payType != null
+                            && emp.payType.trim().equalsIgnoreCase("MONTHLY"));
+                    if (!isMonthly) {
+                        List<model.Holiday> enabledHols = holidayDAO.listEnabledBetween(s, e);
+                        for (model.Holiday h : enabledHols) {
+                            if (h == null || h.type == null) continue;
+                            String t = h.type.trim().toUpperCase();
+                            if ("REGULAR".equals(t)) hasRegEnabled = true;
+                            else if (t.startsWith("SPECIAL")) hasSpecEnabled = true;
+                        }
+                    }
+                } catch (Exception ignore) {
+                    // keep auto-fill resilient; if secondary lookups fail, keep raw hours
+                }
+
+                return new AutoFillPayload(ws, isMonthly, hasRegEnabled, hasSpecEnabled);
             }
 
             @Override
             protected void done() {
                 try {
-                    if (isCancelled()) return;
-                    WorkSummary ws = get();
-                    if (ws == null) return;
-                    // ✅ Apply holiday rules for auto-filled hours
-                    // 1) If employee is MONTHLY: holidays are excluded (no holiday premium pay)
-                    //    -> move ALL holiday buckets into Regular Day so hours are not lost.
-                    // 2) If holiday type is not enabled in this period: treat its bucket as Regular Day (hours not lost).
-                    try {
-                        Employee emp = EmployeeDAO.getById(item.empId);
-                        boolean isMonthly = (emp != null && emp.payType != null
-                                && emp.payType.trim().equalsIgnoreCase("MONTHLY"));
+                    if (isCancelled() || requestVersion != autoFillVersion) return;
+                    AutoFillPayload payload = get();
+                    if (payload == null || payload.summary == null) return;
+                    WorkSummary ws = payload.summary;
 
-                        boolean hasRegEnabled = false;
-                        boolean hasSpecEnabled = false;
-
-                        if (!isMonthly) {
-                            List<model.Holiday> enabledHols = holidayDAO.listEnabledBetween(s, e);
-                            for (model.Holiday h : enabledHols) {
-                                if (h == null || h.type == null) continue;
-                                String t = h.type.trim().toUpperCase();
-                                if ("REGULAR".equals(t)) hasRegEnabled = true;
-                                else if (t.startsWith("SPECIAL")) hasSpecEnabled = true;
-                            }
-                        }
-
-                        if (isMonthly || !hasRegEnabled) {
-                            ws.regularDayHours += ws.regularHolidayHours;
-                            ws.regularDayOtHours += ws.regularHolidayOtHours;
-                            ws.regularHolidayHours = 0;
-                            ws.regularHolidayOtHours = 0;
-                        }
-                        if (isMonthly || !hasSpecEnabled) {
-                            ws.regularDayHours += ws.specialHolidayHours;
-                            ws.regularDayOtHours += ws.specialHolidayOtHours;
-                            ws.specialHolidayHours = 0;
-                            ws.specialHolidayOtHours = 0;
-                        }
-
-                        // Recompute totals (non-OT hours includes regular+holidays; OT includes all OT)
-                        ws.totalHours = ws.regularDayHours + ws.regularHolidayHours + ws.specialHolidayHours;
-                        ws.otHours = ws.regularDayOtHours + ws.regularHolidayOtHours + ws.specialHolidayOtHours;
-                    } catch (Exception ignore) {
-                        // keep auto-fill resilient; if holiday lookup fails, we still fill hours
+                    if (payload.monthly || !payload.regularHolidayEnabled) {
+                        ws.regularDayHours += ws.regularHolidayHours;
+                        ws.regularDayOtHours += ws.regularHolidayOtHours;
+                        ws.regularHolidayHours = 0;
+                        ws.regularHolidayOtHours = 0;
+                    }
+                    if (payload.monthly || !payload.specialHolidayEnabled) {
+                        ws.regularDayHours += ws.specialHolidayHours;
+                        ws.regularDayOtHours += ws.specialHolidayOtHours;
+                        ws.specialHolidayHours = 0;
+                        ws.specialHolidayOtHours = 0;
                     }
 
-                    suppressManualFlag = true;
+                    ws.totalHours = ws.regularDayHours + ws.regularHolidayHours + ws.specialHolidayHours;
+                    ws.otHours = ws.regularDayOtHours + ws.regularHolidayOtHours + ws.specialHolidayOtHours;
 
-                    // set breakdown
+                    suppressManualFlag = true;
                     tfRegDayHours.setText(formatColon(ws.regularDayHours));
                     tfRegDayOT.setText(formatColon(ws.regularDayOtHours));
-
                     tfRegHolHours.setText(formatColon(ws.regularHolidayHours));
                     tfRegHolOT.setText(formatColon(ws.regularHolidayOtHours));
-
                     tfSpecHolHours.setText(formatColon(ws.specialHolidayHours));
                     tfSpecHolOT.setText(formatColon(ws.specialHolidayOtHours));
-
-                    // totals follow your rule
                     tfTotalHours.setText(formatColon(ws.totalHours));
                     if (chkEnableOT.isSelected()) {
                         tfTotalOT.setText(formatColon(ws.otHours));
                     } else {
-                        // OT disabled => force OT to zero
                         tfRegDayOT.setText("00:00");
                         tfRegHolOT.setText("00:00");
                         tfSpecHolOT.setText("00:00");
@@ -724,8 +737,9 @@ g.gridx = 0; g.gridy = r;
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     if (force) {
+                        Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
                         JOptionPane.showMessageDialog(PayrollRunDialog.this,
-                                "Auto-fill error:\n" + ex.getMessage(),
+                                "Auto-fill error:\n" + cause.getMessage(),
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
                     }
@@ -1788,18 +1802,38 @@ void initPeriodCombo() {
     }
 
     private void refreshHolidayCount() {
+        if (holidayCountWorker != null && !holidayCountWorker.isDone()) {
+            holidayCountWorker.cancel(true);
+        }
+
         if (isSelectedEmployeeMonthly()) {
             lblHolidayCount.setText("Holidays in this period: (excluded for MONTHLY)");
             return;
         }
         try {
-            LocalDate s = LocalDate.parse(tfStart.getText().trim(), ISO);
-            LocalDate e = LocalDate.parse(tfEnd.getText().trim(), ISO);
+            final LocalDate s = LocalDate.parse(tfStart.getText().trim(), ISO);
+            final LocalDate e = LocalDate.parse(tfEnd.getText().trim(), ISO);
+            final int requestVersion = ++holidayRefreshVersion;
 
-            HolidayPresetsPH.seedYearIfEmpty(s.getYear());
-            int c = holidayDAO.countBetween(s, e);
+            lblHolidayCount.setText("Holidays in this period: ...");
+            holidayCountWorker = new javax.swing.SwingWorker<Integer, Void>() {
+                @Override
+                protected Integer doInBackground() throws Exception {
+                    HolidayPresetsPH.seedYearIfEmpty(s.getYear());
+                    return holidayDAO.countBetween(s, e);
+                }
 
-            lblHolidayCount.setText("Holidays in this period: " + c);
+                @Override
+                protected void done() {
+                    try {
+                        if (isCancelled() || requestVersion != holidayRefreshVersion) return;
+                        lblHolidayCount.setText("Holidays in this period: " + get());
+                    } catch (Exception ex) {
+                        lblHolidayCount.setText("Holidays in this period: -");
+                    }
+                }
+            };
+            holidayCountWorker.execute();
         } catch (Exception ex) {
             lblHolidayCount.setText("Holidays in this period: -");
         }
@@ -1837,21 +1871,77 @@ void initPeriodCombo() {
     }
  // ================= EMPLOYEES =================
     private void loadEmployees() {
-        cbEmp.removeAllItems();
-        try {
-            List<Employee> list = EmployeeDAO.listActive(); // ✅ active only
-            for (Employee e : list) {
-                cbEmp.addItem(new EmployeeItem(e.empId, e.empNo, e.fullName(), e.payType));
-            }
-            if (cbEmp.getItemCount() > 0 && cbEmp.getSelectedIndex() < 0) {
-                cbEmp.setSelectedIndex(0);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        } finally {
-            cbEmp.revalidate();
-            cbEmp.repaint();
+        loadEmployees(null);
+    }
+
+    private void loadEmployees(Integer keepEmpId) {
+        if (employeeLoadWorker != null && !employeeLoadWorker.isDone()) {
+            employeeLoadWorker.cancel(true);
         }
+
+        final Integer preserve = keepEmpId != null ? keepEmpId : getSelectedEmployeeId();
+        final int requestVersion = ++employeeLoadVersion;
+        cbEmp.setEnabled(false);
+
+        employeeLoadWorker = new javax.swing.SwingWorker<List<Employee>, Void>() {
+            @Override
+            protected List<Employee> doInBackground() throws Exception {
+                return EmployeeDAO.listActive();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    if (isCancelled() || requestVersion != employeeLoadVersion) return;
+                    List<Employee> list = get();
+                    suppressEmployeeSelectionEvents = true;
+                    cbEmp.removeAllItems();
+                    for (Employee e : list) {
+                        cbEmp.addItem(new EmployeeItem(e.empId, e.empNo, e.fullName(), e.payType));
+                    }
+
+                    int indexToSelect = -1;
+                    if (preserve != null) {
+                        for (int i = 0; i < cbEmp.getItemCount(); i++) {
+                            EmployeeItem it = cbEmp.getItemAt(i);
+                            if (it != null && it.empId == preserve) {
+                                indexToSelect = i;
+                                break;
+                            }
+                        }
+                    }
+                    if (indexToSelect >= 0) {
+                        cbEmp.setSelectedIndex(indexToSelect);
+                    } else if (cbEmp.getItemCount() > 0) {
+                        cbEmp.setSelectedIndex(0);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                } finally {
+                    suppressEmployeeSelectionEvents = false;
+                    cbEmp.setEnabled(true);
+                    cbEmp.revalidate();
+                    cbEmp.repaint();
+
+                    if (cbEmp.getItemCount() > 0) {
+                        resetPayrollInputsForSelectedEmployee();
+                        initPeriodCombo();
+                        setPeriodToToday();
+                        syncDatesFromPeriod();
+                        setHolidayUiEnabled(!isSelectedEmployeeMonthly());
+                        refreshHolidayCount();
+                        manualOverride = false;
+                        if (chkAutoFromLogs.isSelected()) autoFillFromTimeLogs(false);
+                    }
+                }
+            }
+        };
+        employeeLoadWorker.execute();
+    }
+
+    private Integer getSelectedEmployeeId() {
+        Object sel = cbEmp.getSelectedItem();
+        return (sel instanceof EmployeeItem it) ? it.empId : null;
     }
 
 
@@ -2527,20 +2617,7 @@ void initPeriodCombo() {
             keepId = it.empId;
         }
 
-        loadEmployees();
-
-        if (keepId != null) {
-            for (int i = 0; i < cbEmp.getItemCount(); i++) {
-                EmployeeItem it = cbEmp.getItemAt(i);
-                if (it != null && it.empId == keepId) {
-                    cbEmp.setSelectedIndex(i);
-                    break;
-                }
-            }
-        }
-
-        cbEmp.revalidate();
-        cbEmp.repaint();
+        loadEmployees(keepId);
     }
 
     
