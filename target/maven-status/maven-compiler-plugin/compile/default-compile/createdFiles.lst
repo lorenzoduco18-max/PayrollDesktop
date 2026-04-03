@@ -2,6 +2,7 @@ ui\LogbookPanel$RoundedCard.class
 ui\PayrollRunDialog$AutoFillPayload.class
 ui\LoginFrame$AnimatedGradientPanel.class
 ui\EmployeeDetailsDialog$DotIcon.class
+ui\LogbookPanel$LogEditDialog$1.class
 util\PDFUtil$FontPack.class
 service\PayrollCalculator.class
 ui\EmployeeTimePanel$DateOnlyRenderer.class

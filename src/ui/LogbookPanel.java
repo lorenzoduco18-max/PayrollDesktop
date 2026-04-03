@@ -1228,8 +1228,15 @@ t.setSelectionBackground(new Color(35, 120, 195));
         private final DateTimeValue lunchInVal = new DateTimeValue(LocalDate.now(), 1, 0, true);
         private final DateTimeValue outVal = new DateTimeValue(LocalDate.now(), 6, 0, true);
 
-        private final DatePickerField inDate = new DatePickerField(inVal);
-        private final TimePickerField inTime = new TimePickerField(inVal);
+        private final DatePickerField inDate = new DatePickerField(inVal, this::syncOptionalDatesToBaseLogDate);
+        private final TimePickerField inTime = new TimePickerField(inVal) {
+            private static final long serialVersionUID = 1L;
+            @Override
+            void setValue(DateTimeValue v) {
+                super.setValue(v);
+                syncOptionalDatesToBaseLogDate();
+            }
+        };
 
         private final DatePickerField lunchOutDate = new DatePickerField(lunchOutVal);
         private final TimePickerField lunchOutTime = new TimePickerField(lunchOutVal);
@@ -1357,17 +1364,25 @@ t.setSelectionBackground(new Color(35, 120, 195));
 
             chkHasLunchOut.addActionListener(e -> {
                 if (!chkHasLunchOut.isSelected()) {
+                    lunchOutVal.date = inVal.date;
                     chkHasLunchIn.setSelected(false);
                     toggleLunchInEnabled();
                 }
+                syncOptionalDatesToBaseLogDate();
                 toggleLunchOutEnabled();
             });
             chkHasLunchIn.addActionListener(e -> {
                 if (chkHasLunchIn.isSelected()) chkHasLunchOut.setSelected(true);
+                else lunchInVal.date = inVal.date;
+                syncOptionalDatesToBaseLogDate();
                 toggleLunchOutEnabled();
                 toggleLunchInEnabled();
             });
-            chkHasOut.addActionListener(e -> toggleOutEnabled());
+            chkHasOut.addActionListener(e -> {
+                if (!chkHasOut.isSelected()) outVal.date = inVal.date;
+                syncOptionalDatesToBaseLogDate();
+                toggleOutEnabled();
+            });
 
             JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
             actions.setOpaque(false);
@@ -1563,6 +1578,8 @@ t.setSelectionBackground(new Color(35, 120, 195));
                             chkHasOut.setSelected(false);
                         }
 
+                        applyBaseLogDateToMissingOptionalFields(inVal.date);
+
                         inDate.setValue(inVal);
                         inTime.setValue(inVal);
                         lunchOutDate.setValue(lunchOutVal);
@@ -1590,6 +1607,49 @@ t.setSelectionBackground(new Color(35, 120, 195));
                         "Failed to load log record:\n" + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+
+
+        private void syncOptionalDatesToBaseLogDate() {
+            LocalDate base = inVal.date;
+            if (base == null) return;
+
+            if (!chkHasLunchOut.isSelected()) {
+                lunchOutVal.date = base;
+                lunchOutDate.setValue(lunchOutVal);
+                lunchOutTime.setValue(lunchOutVal);
+            }
+            if (!chkHasLunchIn.isSelected()) {
+                lunchInVal.date = base;
+                lunchInDate.setValue(lunchInVal);
+                lunchInTime.setValue(lunchInVal);
+            }
+            if (!chkHasOut.isSelected()) {
+                outVal.date = base;
+                outDate.setValue(outVal);
+                outTime.setValue(outVal);
+            }
+        }
+
+        private void applyBaseLogDateToMissingOptionalFields(LocalDate base) {
+            if (base == null) return;
+
+            if (!chkHasLunchOut.isSelected()) {
+                lunchOutVal.date = base;
+            }
+            if (!chkHasLunchIn.isSelected()) {
+                lunchInVal.date = base;
+            }
+            if (!chkHasOut.isSelected()) {
+                outVal.date = base;
+            }
+
+            lunchOutDate.setValue(lunchOutVal);
+            lunchOutTime.setValue(lunchOutVal);
+            lunchInDate.setValue(lunchInVal);
+            lunchInTime.setValue(lunchInVal);
+            outDate.setValue(outVal);
+            outTime.setValue(outVal);
         }
 
         private void onSave() {
