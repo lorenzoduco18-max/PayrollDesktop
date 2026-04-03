@@ -209,6 +209,7 @@ double grossPay = basicPay + overtimePay + holidayTotal;
         p.specialHolidayHours = specialHolidayHours;
 
         p.hourlyRate = hourlyRate;
+        p.dailyRate = round2(emp.rate);
         p.otRateUsed = otRateUsed;
 
         p.basicPay = round2(basicPay);

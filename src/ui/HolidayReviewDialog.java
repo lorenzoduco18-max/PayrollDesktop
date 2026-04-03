@@ -323,16 +323,16 @@ public class HolidayReviewDialog extends JDialog {
         addRow4(grid, g, row++, "Name", tfName, "Scope", cbScope);
         addRow4(grid, g, row++, "Holiday Rate (PHP/day)", tfRateDay, "Notes", tfNotes);
 
-        btnDelete = new JButton("Delete");
-        btnSave = new JButton("Save / Update");
-        btnClose = new JButton("Close");
+        btnDelete = new RoundedButton("Delete", new Color(214, 92, 92), Color.WHITE);
+        btnSave = new RoundedButton("Save / Update", new Color(24, 130, 90), Color.WHITE);
+        btnClose = new RoundedButton("Close", new Color(245, 245, 245), new Color(35, 35, 35));
 
         Theme.styleNeutralButton(btnDelete);
         Theme.stylePrimaryButton(btnSave);
         Theme.styleNeutralButton(btnClose);
-
-        btnDelete.putClientProperty("bubbleBorder", new Color(0xF1B5B5));
-        btnDelete.setForeground(new Color(0x8B1A1A));
+        keepOriginalIosButtonColors(btnDelete, "danger");
+        keepOriginalIosButtonColors(btnSave, "primary");
+        keepOriginalIosButtonColors(btnClose, "neutral");
 
         btnDelete.addActionListener(e -> deleteHoliday());
         btnSave.addActionListener(e -> saveHoliday());
@@ -349,6 +349,28 @@ public class HolidayReviewDialog extends JDialog {
         card.add(grid, BorderLayout.CENTER);
         card.add(actions, BorderLayout.SOUTH);
         return card;
+    }
+
+
+    private void keepOriginalIosButtonColors(JButton b, String role) {
+        if (!(b instanceof RoundedButton rb)) return;
+
+        if ("primary".equals(role)) {
+            rb.setBackground(new Color(24, 130, 90));
+            rb.setForeground(Color.WHITE);
+        } else if ("neutral".equals(role)) {
+            rb.setBackground(new Color(245, 245, 245));
+            rb.setForeground(new Color(35, 35, 35));
+        } else if ("danger".equals(role)) {
+            rb.setBackground(new Color(214, 92, 92));
+            rb.setForeground(Color.WHITE);
+        }
+
+        rb.setCornerRadius(18);
+        rb.setOpaque(false);
+        rb.setContentAreaFilled(false);
+        rb.setBorderPainted(false);
+        rb.setFocusPainted(false);
     }
 
     private void addRow4(JPanel p, GridBagConstraints g, int row,

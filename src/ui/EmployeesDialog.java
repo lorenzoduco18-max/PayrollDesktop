@@ -1,6 +1,5 @@
 package ui;
 
-import com.formdev.flatlaf.FlatClientProperties;
 import dao.DB;
 import dao.EmployeeDAO;
 import model.Employee;
@@ -89,12 +88,12 @@ public class EmployeesDialog extends JDialog {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
         actions.setOpaque(false);
 
-        btnCreate = new JButton("Create Employee Account");
-        btnEdit = new JButton("Edit");
-        btnDeactivate = new JButton("Deactivate");
-        btnReactivate = new JButton("Reactivate");
-        btnDelete = new JButton("Delete");
-        btnRefresh = new JButton("Refresh");
+        btnCreate = new RoundedButton("Create Employee Account", new Color(245, 245, 245), new Color(35, 35, 35));
+        btnEdit = new RoundedButton("Edit", new Color(245, 245, 245), new Color(35, 35, 35));
+        btnDeactivate = new RoundedButton("Deactivate", new Color(245, 245, 245), new Color(35, 35, 35));
+        btnReactivate = new RoundedButton("Reactivate", new Color(245, 245, 245), new Color(35, 35, 35));
+        btnDelete = new RoundedButton("Delete", new Color(214, 92, 92), Color.WHITE);
+        btnRefresh = new RoundedButton("Refresh", new Color(245, 245, 245), new Color(35, 35, 35));
 
         round(btnCreate, true);
         round(btnEdit, false);
@@ -140,9 +139,21 @@ public class EmployeesDialog extends JDialog {
     }
 
     private void round(AbstractButton b, boolean primary) {
-        b.putClientProperty(FlatClientProperties.BUTTON_TYPE, "roundRect");
-        b.putClientProperty(FlatClientProperties.STYLE,
-                " arc:999; margin: 6,14,6,14;" + (primary ? "font: bold;" : ""));
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setMargin(new Insets(7, 16, 7, 16));
+        b.setFocusable(false);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setPreferredSize(new Dimension(Math.max(b.getPreferredSize().width, 92), 38));
+        if (b instanceof RoundedButton rb) {
+            rb.setCornerRadius(18);
+            if (primary) {
+                rb.setBackground(new Color(24, 130, 90));
+                rb.setForeground(Color.WHITE);
+            } else {
+                rb.setBackground(new Color(245, 245, 245));
+                rb.setForeground(new Color(35, 35, 35));
+            }
+        }
     }
 
     private Integer getSelectedEmpId() {

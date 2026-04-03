@@ -1,6 +1,5 @@
 package ui;
 
-import com.formdev.flatlaf.FlatClientProperties;
 import dao.DB;
 
 import javax.swing.*;
@@ -74,16 +73,11 @@ public class LogbookDialog extends JDialog {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
         actions.setOpaque(false);
 
-        btnRefresh = new JButton("Refresh");
-        btnDelete = new JButton("Delete");
+        btnRefresh = new RoundedButton("Refresh", new Color(245, 245, 245), new Color(35, 35, 35));
+        btnDelete = new RoundedButton("Delete", new Color(214, 92, 92), Color.WHITE);
 
         pill(btnRefresh, false);
         pill(btnDelete, false);
-
-        btnDelete.setBackground(new Color(220, 53, 69));
-        btnDelete.setForeground(Color.WHITE);
-        btnDelete.setOpaque(true);
-        btnDelete.setBorderPainted(false);
 
         btnRefresh.addActionListener(e -> refresh());
         btnDelete.addActionListener(e -> deleteSelected());
@@ -99,11 +93,14 @@ public class LogbookDialog extends JDialog {
     }
 
     private void pill(JButton b, boolean primary) {
-        b.putClientProperty(FlatClientProperties.BUTTON_TYPE, "roundRect");
-        b.putClientProperty(FlatClientProperties.STYLE,
-                " margin: 6,14,6,14;" + (primary ? "font: bold;" : ""));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         b.setFocusable(false);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setMargin(new Insets(7, 16, 7, 16));
+        b.setPreferredSize(new Dimension(b.getPreferredSize().width, 38));
+        if (b instanceof RoundedButton rb) {
+            rb.setCornerRadius(18);
+        }
     }
 
     private void refresh() {

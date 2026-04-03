@@ -72,7 +72,7 @@ public class EmployeeTimePanel extends JPanel {
 
     private final JLabel lblDate = new JLabel("-");
     private final JLabel lblStatus = new JLabel("-");
-    private final PillButton btnLogout = new PillButton("Logout", new Color(0x0F766E));
+    private final RoundedButton btnLogout = createIosButton("Logout", new Color(0x0F766E), Color.WHITE);
 
     // right card
     private final JLabel lblName = new JLabel("-");
@@ -83,14 +83,14 @@ public class EmployeeTimePanel extends JPanel {
     private final JLabel lblTodaySum = new JLabel("Today: -", SwingConstants.CENTER);
     private final JLabel lblWeekSum = new JLabel("This week: -", SwingConstants.CENTER);
     private final JLabel lblPayPeriod = new JLabel(" ", SwingConstants.LEFT);
-    private final PillButton btnToggle = new PillButton("-", TEAL);
+    private final RoundedButton btnToggle = createIosButton("-", TEAL, Color.WHITE);
     // change password (employee self-service)
-    private final PillButton btnChangePassword = new PillButton("Change Password", new Color(0xFFFFFF));
+    private final RoundedButton btnChangePassword = createIosButton("Change Password", new Color(0xE5E7EB), new Color(0x111827));
 
     // payslips
     @SuppressWarnings("rawtypes")
     private final JComboBox<PayPeriodItem> cbPayslipCutoff = new JComboBox<>();
-    private final PillButton btnDownloadPayslip = new PillButton("Download", new Color(0x1D4ED8));
+    private final RoundedButton btnDownloadPayslip = createIosButton("Download", new Color(0x1D4ED8), Color.WHITE);
     private final JLabel lblPayslipStatus = new JLabel(" ", SwingConstants.CENTER);
 
     private final JLabel lblPhotoReq = new JLabel("Photo required", SwingConstants.CENTER);
@@ -372,7 +372,7 @@ JPanel top = new JPanel(new BorderLayout());
         // Change Password button must stay visible (text was white-on-white before)
         btnChangePassword.setFont(new Font("SansSerif", Font.BOLD, 12));
         btnChangePassword.setPreferredSize(new Dimension(180, 38));
-        btnChangePassword.setFill(new Color(0xE5E7EB));
+        btnChangePassword.setBackground(new Color(0xE5E7EB));
         btnChangePassword.setForeground(new Color(0x111827));
 
         lblStateHint.setFont(new Font("SansSerif", Font.PLAIN, 11));
@@ -607,6 +607,14 @@ JPanel top = new JPanel(new BorderLayout());
         }
 
         @Override public String toString() { return label; }
+    }
+
+
+    private RoundedButton createIosButton(String text, Color background, Color foreground) {
+        RoundedButton button = new RoundedButton(text, background, foreground);
+        button.setCornerRadius(18);
+        button.setFocusPainted(false);
+        return button;
     }
 
     private void styleClockLabels() {
@@ -1157,7 +1165,7 @@ private void openChangePasswordDialog() {
                 badge.setForeground(new Color(0xC2410C));
 
                 btnToggle.setText("RETURN FROM LUNCH");
-                btnToggle.setFill(new Color(0x0F766E));
+                btnToggle.setBackground(new Color(0x0F766E));
                 lblStateHint.setText("You're currently on lunch break.");
             } else if (state == TimeLogDAO.PortalState.TIMED_IN) {
                 lblStatus.setText("●  TIMED IN");
@@ -1169,7 +1177,7 @@ private void openChangePasswordDialog() {
                 badge.setForeground(OK_FG);
 
                 btnToggle.setText("TIME OUT");
-                btnToggle.setFill(ORANGE);
+                btnToggle.setBackground(ORANGE);
                 lblStateHint.setText("You're currently timed in.");
             } else {
                 lblStatus.setText("●  TIMED OUT");
@@ -1181,7 +1189,7 @@ private void openChangePasswordDialog() {
                 badge.setForeground(OUT_FG);
 
                 btnToggle.setText("TIME IN");
-                btnToggle.setFill(TEAL);
+                btnToggle.setBackground(TEAL);
                 lblStateHint.setText("You're currently timed out.");
             }
         } catch (Exception ex) {
@@ -1193,7 +1201,7 @@ private void openChangePasswordDialog() {
             badge.setBackground(new Color(0xFEF2F2));
             badge.setForeground(new Color(0xB91C1C));
             btnToggle.setText("RETRY");
-            btnToggle.setFill(new Color(0x9CA3AF));
+            btnToggle.setBackground(new Color(0x9CA3AF));
             lblStateHint.setText(" ");
         }
     }
@@ -1664,73 +1672,6 @@ private int computeWorkedMinutes(LocalDate from, LocalDate to) {
         public Insets getInsets() {
             Insets in = super.getInsets();
             return new Insets(in.top, in.left, in.bottom + 6, in.right + 6);
-        }
-    }
-
-    /** Rounded corner buttons (pill style), no FlatLaf dependency. */
-    private static class PillButton extends JButton {
-        private Color fill;
-        private Color fillHover;
-        private boolean hover = false;
-
-        PillButton(String text, Color fill) {
-            super(text);
-            setFill(fill);
-            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            setFocusPainted(false);
-            setContentAreaFilled(false);
-            setBorderPainted(false);
-            setOpaque(false);
-            setForeground(Color.WHITE);
-            setFont(new Font("SansSerif", Font.BOLD, 12));
-            setMargin(new Insets(10, 16, 10, 16));
-
-            addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e) { hover = false; repaint(); }
-            });
-        }
-
-        void setFill(Color c) {
-            this.fill = c;
-            this.fillHover = darker(c, 0.10f);
-            repaint();
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int w = getWidth();
-            int h = getHeight();
-            int arc = h;
-
-            Color base = isEnabled() ? (hover ? fillHover : fill) : new Color(0x9CA3AF);
-            g2.setColor(base);
-            g2.fillRoundRect(0, 0, w, h, arc, arc);
-
-            g2.setColor(new Color(255, 255, 255, 60));
-            g2.drawRoundRect(1, 1, w - 3, h - 3, arc, arc);
-
-            g2.dispose();
-            super.paintComponent(g);
-        }
-
-        @Override
-        public void paintBorder(Graphics g) { }
-
-        @Override
-        public boolean contains(int x, int y) {
-            Shape s = new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), getHeight(), getHeight());
-            return s.contains(x, y);
-        }
-
-        private static Color darker(Color c, float amount) {
-            int r = (int) (c.getRed() * (1f - amount));
-            int gg = (int) (c.getGreen() * (1f - amount));
-            int b = (int) (c.getBlue() * (1f - amount));
-            return new Color(Math.max(r, 0), Math.max(gg, 0), Math.max(b, 0));
         }
     }
 

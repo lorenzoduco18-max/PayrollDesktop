@@ -130,7 +130,7 @@ public class CameraCaptureDialog extends JDialog {
     private void normalizeButton(AbstractButton b) {
         b.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         b.setFocusPainted(false);
-        b.setPreferredSize(new Dimension(120, 36));
+        b.setPreferredSize(new Dimension(120, 40));
     }
 
     // ---------------- Camera lifecycle
@@ -331,112 +331,5 @@ public class CameraCaptureDialog extends JDialog {
         int y = (panelH - drawH) / 2;
 
         g2.drawImage(img, x, y, drawW, drawH, null);
-    }
-
-    // ---------------- Rounded colored button (simple + visible)
-
-    private static class RoundedButton extends JButton {
-        private final Color baseBg;
-        private final Color baseFg;
-        private boolean hover = false;
-
-        private final int arc = 16;
-
-        RoundedButton(String text, Color bg, Color fg) {
-            super(text);
-            this.baseBg = bg;
-            this.baseFg = fg;
-
-            setContentAreaFilled(false);
-            setBorderPainted(false);
-            setFocusPainted(false);
-            setOpaque(false);
-
-            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            setMargin(new Insets(8, 16, 8, 16));
-
-            addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e)  { hover = false; repaint(); }
-            });
-        }
-
-        @Override protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-            int w = getWidth();
-            int h = getHeight();
-
-            Color bg = baseBg;
-            if (!isEnabled()) {
-                bg = mix(baseBg, Color.WHITE, 0.50f);
-            } else if (hover) {
-                bg = isVeryLight(baseBg) ? darken(baseBg, 0.06f) : brighten(baseBg, 0.08f);
-            }
-
-            // shadow (subtle)
-            if (isEnabled()) {
-                g2.setColor(new Color(0, 0, 0, 35));
-                g2.fillRoundRect(1, 3, w - 2, h - 2, arc + 8, arc + 8);
-            }
-
-            // body
-            g2.setColor(bg);
-            g2.fillRoundRect(0, 0, w, h, arc, arc);
-
-            // border
-            g2.setColor(new Color(0, 0, 0, isEnabled() ? (hover ? 55 : 35) : 20));
-            g2.drawRoundRect(0, 0, w - 1, h - 1, arc, arc);
-
-            // text
-            Color fg = baseFg;
-            if (!isEnabled()) fg = new Color(fg.getRed(), fg.getGreen(), fg.getBlue(), 160);
-
-            g2.setFont(getFont());
-            FontMetrics fm = g2.getFontMetrics();
-            String s = getText();
-            int tx = (w - fm.stringWidth(s)) / 2;
-            int ty = (h + fm.getAscent()) / 2 - 2;
-
-            g2.setColor(fg);
-            g2.drawString(s, tx, ty);
-
-            g2.dispose();
-        }
-
-        private static boolean isVeryLight(Color c) { return luminance(c) > 220; }
-
-        private static double luminance(Color c) {
-            return 0.2126 * c.getRed() + 0.7152 * c.getGreen() + 0.0722 * c.getBlue();
-        }
-
-        private static Color brighten(Color c, float amount) {
-            amount = clamp01(amount);
-            int r = (int) (c.getRed() + (255 - c.getRed()) * amount);
-            int g = (int) (c.getGreen() + (255 - c.getGreen()) * amount);
-            int b = (int) (c.getBlue() + (255 - c.getBlue()) * amount);
-            return new Color(clamp255(r), clamp255(g), clamp255(b));
-        }
-
-        private static Color darken(Color c, float amount) {
-            amount = clamp01(amount);
-            int r = (int) (c.getRed() * (1f - amount));
-            int g = (int) (c.getGreen() * (1f - amount));
-            int b = (int) (c.getBlue() * (1f - amount));
-            return new Color(clamp255(r), clamp255(g), clamp255(b));
-        }
-
-        private static Color mix(Color a, Color b, float t) {
-            t = clamp01(t);
-            int r = (int) (a.getRed() * (1 - t) + b.getRed() * t);
-            int g = (int) (a.getGreen() * (1 - t) + b.getGreen() * t);
-            int bl = (int) (a.getBlue() * (1 - t) + b.getBlue() * t);
-            return new Color(clamp255(r), clamp255(g), clamp255(bl));
-        }
-
-        private static float clamp01(float v) { return Math.max(0f, Math.min(1f, v)); }
-        private static int clamp255(int v)    { return Math.max(0, Math.min(255, v)); }
     }
 }

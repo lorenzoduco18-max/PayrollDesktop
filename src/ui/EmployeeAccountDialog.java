@@ -1,6 +1,7 @@
 package ui;
 
 import com.formdev.flatlaf.FlatClientProperties;
+
 import dao.DB;
 import dao.EmployeeDAO;
 import model.Employee;
@@ -46,16 +47,16 @@ public class EmployeeAccountDialog extends JDialog {
     private final JTextField txtSpecialHolidayRate = new JTextField();
     private final JLabel lblRate = new JLabel("Rate *");
 
-    private final JButton btnSaveEmployee = new JButton("Save Employee");
+    private final JButton btnSaveEmployee = new RoundedButton("Save Employee", new Color(24, 130, 90), Color.WHITE);
 
     // Account fields
     private final JTextField txtUsername = new JTextField();
     private final JPasswordField txtPassword = new JPasswordField();
     private final JPasswordField txtConfirm = new JPasswordField();
     private final JLabel lblAccountHint = new JLabel(" ");
-    private final JButton btnCreateAccount = new JButton("Create Account");
+    private final JButton btnCreateAccount = new RoundedButton("Create Account", new Color(24, 130, 90), Color.WHITE);
 
-    private final JButton btnClose = new JButton("Close");
+    private final JButton btnClose = new RoundedButton("Close", new Color(245, 245, 245), new Color(35, 35, 35));
 
     public EmployeeAccountDialog(Window owner) {
         this(owner, (Employee) null);
@@ -111,10 +112,10 @@ public class EmployeeAccountDialog extends JDialog {
         header.setOpaque(false);
 
         JLabel title = new JLabel(employee == null ? "Create Employee Account" : "Edit Employee");
-        title.putClientProperty(FlatClientProperties.STYLE, "font:+8; font:bold");
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 20f));
 
         JLabel subtitle = new JLabel("Employee details and optional login credentials");
-        subtitle.putClientProperty(FlatClientProperties.STYLE, "foreground:$Label.disabledForeground");
+        subtitle.setForeground(new Color(0, 0, 0, 140));
 
         JPanel texts = new JPanel(new GridLayout(0, 1));
         texts.setOpaque(false);
@@ -299,7 +300,7 @@ public class EmployeeAccountDialog extends JDialog {
     }
 
     private JComponent block(JLabel label, JComponent field) {
-        label.putClientProperty(FlatClientProperties.STYLE, "font:-1");
+        label.setFont(label.getFont().deriveFont(12f));
 
         JPanel p = new JPanel(new BorderLayout(0, 6));
         p.setOpaque(false);
@@ -310,7 +311,7 @@ public class EmployeeAccountDialog extends JDialog {
 
     private JComponent block(String labelText, JComponent field) {
         JLabel lbl = new JLabel(labelText);
-        lbl.putClientProperty(FlatClientProperties.STYLE, "font:-1");
+        lbl.setFont(lbl.getFont().deriveFont(12f));
 
         JPanel p = new JPanel(new BorderLayout(0, 6));
         p.setOpaque(false);
@@ -341,9 +342,21 @@ public class EmployeeAccountDialog extends JDialog {
     }
 
     private void styleButton(JButton b, boolean primary) {
-        if (primary) b.putClientProperty(FlatClientProperties.STYLE, "arc:999; font:bold; margin:8,18,8,18");
-        else b.putClientProperty(FlatClientProperties.STYLE, "arc:999; margin:8,18,8,18");
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setFocusable(false);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setMargin(new Insets(7, 16, 7, 16));
+        b.setPreferredSize(new Dimension(Math.max(b.getPreferredSize().width, 110), 38));
+        if (b instanceof RoundedButton rb) {
+            rb.setCornerRadius(18);
+            if (primary) {
+                rb.setBackground(new Color(24, 130, 90));
+                rb.setForeground(Color.WHITE);
+            } else {
+                rb.setBackground(new Color(245, 245, 245));
+                rb.setForeground(new Color(35, 35, 35));
+            }
+        }
     }
 
     private void updateRateLabel() {

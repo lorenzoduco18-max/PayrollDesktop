@@ -1,6 +1,5 @@
 package ui;
 
-import com.formdev.flatlaf.FlatClientProperties;
 import dao.EmployeeDAO;
 import model.Employee;
 
@@ -17,6 +16,10 @@ import javax.swing.RowFilter;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagLayout;
+import java.awt.RenderingHints;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -35,16 +38,16 @@ public class EmployeesPanel extends JPanel {
 
     private final EmployeeDAO employeeDAO = new EmployeeDAO();
 
-    private final JTextField txtSearch = new JTextField();
+    private final PillTextField txtSearch = new PillTextField(22);
     private final Timer searchTimer;
-    private final JButton btnViewDetails = new JButton("View Employee Details");
-    private final JButton btnRefresh = new JButton("Refresh");
+    private final JButton btnViewDetails = new RoundedButton("View Employee Details", new Color(245, 245, 245), new Color(35, 35, 35));
+    private final JButton btnRefresh = new RoundedButton("Refresh", new Color(245, 245, 245), new Color(35, 35, 35));
 
-    private final JButton btnCreate = new JButton("Create Employee Account");
-    private final JButton btnEdit = new JButton("Edit");
-    private final JButton btnDeactivate = new JButton("Deactivate");
-    private final JButton btnReactivate = new JButton("Reactivate");
-    private final JButton btnDelete = new JButton("Delete");
+    private final JButton btnCreate = new RoundedButton("Create Employee Account", new Color(245, 245, 245), new Color(35, 35, 35));
+    private final JButton btnEdit = new RoundedButton("Edit", new Color(245, 245, 245), new Color(35, 35, 35));
+    private final JButton btnDeactivate = new RoundedButton("Deactivate", new Color(245, 245, 245), new Color(35, 35, 35));
+    private final JButton btnReactivate = new RoundedButton("Reactivate", new Color(245, 245, 245), new Color(35, 35, 35));
+    private final JButton btnDelete = new RoundedButton("Delete", new Color(214, 92, 92), Color.WHITE);
 
     private final DefaultTableModel model = new DefaultTableModel(
             new Object[]{"#", "Emp No", "Name", "Position", "Pay Type", "Rate", "Status", "EMP_ID"}, 0
@@ -98,10 +101,10 @@ public class EmployeesPanel extends JPanel {
 
         // Header
         JLabel title = new JLabel("Employees");
-        title.putClientProperty(FlatClientProperties.STYLE, "font:+10; font:bold");
+        title.setFont(title.getFont().deriveFont(Font.BOLD, title.getFont().getSize() + 6f));
 
         JLabel sub = new JLabel("Add, edit, deactivate, and reactivate employees.");
-        sub.putClientProperty(FlatClientProperties.STYLE, "foreground:$Label.disabledForeground");
+        sub.setForeground(new Color(0, 0, 0, 140));
 
         JPanel leftHeader = new JPanel();
         leftHeader.setOpaque(false);
@@ -110,7 +113,6 @@ public class EmployeesPanel extends JPanel {
         leftHeader.add(Box.createVerticalStrut(4));
         leftHeader.add(sub);
 
-        txtSearch.putClientProperty(FlatClientProperties.STYLE, "arc:999; margin:6,10,6,10");
 
         styleTopPill(btnViewDetails);
         styleTopPill(btnRefresh);
@@ -119,7 +121,8 @@ public class EmployeesPanel extends JPanel {
         rightHeader.setOpaque(false);
         rightHeader.add(new JLabel("Search:"));
 
-        txtSearch.setPreferredSize(new Dimension(240, 34));
+        txtSearch.setPreferredSize(new Dimension(255, 38));
+        txtSearch.setMinimumSize(new Dimension(255, 38));
 
         // Live search (debounced) so results update while typing
         searchTimer = new Timer(280, e -> loadEmployeesKeepSelection(null));
@@ -234,24 +237,39 @@ public class EmployeesPanel extends JPanel {
     }
 
     private void styleTopPill(JButton b) {
-        b.putClientProperty(FlatClientProperties.STYLE, "arc:999; margin:6,14,6,14");
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         b.setFocusable(false);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setMargin(new java.awt.Insets(7, 16, 7, 16));
+        b.setPreferredSize(new Dimension(Math.max(b.getPreferredSize().width, 96), 38));
+        if (b instanceof RoundedButton rb) rb.setCornerRadius(18);
     }
 
     private void stylePill(JButton b, boolean primary) {
-        b.putClientProperty(FlatClientProperties.STYLE,
-                primary ? "arc:999; font:bold;margin:6,14,6,14"
-                        : "arc:999; margin:6,14,6,14");
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         b.setFocusable(false);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setMargin(new java.awt.Insets(7, 16, 7, 16));
+        if (primary) {
+            b.setBackground(new Color(24, 130, 90));
+            b.setForeground(Color.WHITE);
+        } else {
+            b.setBackground(new Color(245, 245, 245));
+            b.setForeground(new Color(35, 35, 35));
+        }
+        b.setPreferredSize(new Dimension(Math.max(b.getPreferredSize().width, 94), 38));
+        if (b instanceof RoundedButton rb) rb.setCornerRadius(18);
     }
 
     private void styleDanger(JButton b) {
-        b.putClientProperty(FlatClientProperties.STYLE,
-                "arc:999; margin:6,14,6,14; background:#D83A3A; foreground:#FFFFFF; hoverBackground:#C73232");
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         b.setFocusable(false);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setMargin(new java.awt.Insets(7, 16, 7, 16));
+        b.setBackground(new Color(214, 92, 92));
+        b.setForeground(Color.WHITE);
+        b.setPreferredSize(new Dimension(Math.max(b.getPreferredSize().width, 94), 38));
+        if (b instanceof RoundedButton rb) rb.setCornerRadius(18);
     }
 
     public Integer getSelectedEmpId() {
@@ -751,7 +769,40 @@ private void applyTableStyling() {
         });
     }
 
+    private static class PillTextField extends JTextField {
+        private static final long serialVersionUID = 1L;
+        private final Color border = new Color(220, 206, 186);
+
+        PillTextField(int columns) {
+            super(columns);
+            setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            setOpaque(false);
+            setBorder(new EmptyBorder(9, 14, 9, 14));
+            setPreferredSize(new Dimension(280, 38));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int w = getWidth();
+            int h = getHeight();
+            int arc = h;
+
+            g2.setColor(Color.WHITE);
+            g2.fillRoundRect(0, 0, w, h, arc, arc);
+
+            g2.setColor(border);
+            g2.drawRoundRect(0, 0, w - 1, h - 1, arc, arc);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
 }
+
 
 class StatusBadgeRenderer extends DefaultTableCellRenderer {
     private final Color zebraEven;
@@ -768,9 +819,6 @@ class StatusBadgeRenderer extends DefaultTableCellRenderer {
                                                    boolean hasFocus, int row, int column) {
         String status = value == null ? "" : value.toString().trim().toUpperCase();
 
-        // IMPORTANT:
-        // Use row selection state directly so the status cell always joins the same blue row.
-        // No pill, no upper layer, no floating badge when the row is selected.
         if (table.isRowSelected(row)) {
             JPanel flatCell = new JPanel(new BorderLayout());
             flatCell.setOpaque(true);
@@ -788,30 +836,56 @@ class StatusBadgeRenderer extends DefaultTableCellRenderer {
 
         Color rowBase = (row % 2 == 0) ? zebraEven : zebraOdd;
 
-        JPanel outer = new JPanel(new java.awt.GridBagLayout());
+        JPanel outer = new JPanel(new GridBagLayout());
         outer.setOpaque(true);
         outer.setBackground(rowBase);
         outer.setBorder(BorderFactory.createEmptyBorder(3, 8, 3, 8));
 
-        JLabel pill = new JLabel(status);
-        pill.setOpaque(true);
-        pill.setHorizontalAlignment(SwingConstants.CENTER);
-        pill.setFont(pill.getFont().deriveFont(Font.BOLD, 12f));
-        pill.putClientProperty(FlatClientProperties.STYLE, "arc:999");
-        pill.setBorder(BorderFactory.createEmptyBorder(7, 22, 7, 22));
-
+        RoundedBadge pill = new RoundedBadge(status);
         if ("ACTIVE".equals(status)) {
-            pill.setForeground(new Color(18, 120, 72));
-            pill.setBackground(new Color(232, 247, 238));
+            pill.setBadgeColors(new Color(232, 247, 238), new Color(18, 120, 72));
         } else if ("INACTIVE".equals(status)) {
-            pill.setForeground(new Color(185, 52, 52));
-            pill.setBackground(new Color(252, 237, 237));
+            pill.setBadgeColors(new Color(252, 237, 237), new Color(185, 52, 52));
         } else {
-            pill.setForeground(new Color(83, 90, 98));
-            pill.setBackground(new Color(242, 244, 247));
+            pill.setBadgeColors(new Color(242, 244, 247), new Color(83, 90, 98));
         }
 
         outer.add(pill);
         return outer;
+    }
+
+    private static class RoundedBadge extends JLabel {
+        private Color bg = new Color(232, 247, 238);
+        private Color fg = new Color(18, 120, 72);
+
+        RoundedBadge(String text) {
+            super(text, SwingConstants.CENTER);
+            setFont(getFont().deriveFont(Font.BOLD, 12f));
+            setBorder(BorderFactory.createEmptyBorder(7, 22, 7, 22));
+            setOpaque(false);
+        }
+
+        void setBadgeColors(Color bg, Color fg) {
+            this.bg = bg;
+            this.fg = fg;
+            setForeground(fg);
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension d = super.getPreferredSize();
+            d.height = Math.max(d.height, 32);
+            return d;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(bg);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 999, 999);
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 }

@@ -76,7 +76,7 @@ public class PayrollRunDialog extends JDialog {
 
     // ✅ auto-fill controls
     private final JCheckBox chkAutoFromLogs = new JCheckBox("Auto-fill hours from Time Logs");
-    private final JButton btnRecalcFromLogs = new JButton("Recalculate");
+    private final JButton btnRecalcFromLogs = new RoundedButton("Recalculate", new Color(24, 130, 90), Color.WHITE);
 
     // If user edits fields manually while auto is ON, we stop auto-overwriting until Recalculate.
     private boolean manualOverride = false;
@@ -92,7 +92,7 @@ public class PayrollRunDialog extends JDialog {
     private boolean suppressEmployeeSelectionEvents = false;
 
     private final JLabel lblHolidayCount = new JLabel("Holidays in this period: -");
-    private final JButton btnReviewHolidays = new JButton("Holidays");
+    private final JButton btnReviewHolidays = new RoundedButton("Holidays", new Color(24, 130, 90), Color.WHITE);
     private final HolidayDAO holidayDAO = new HolidayDAO();
 
     // Keep references so we can enable/disable holiday UI for MONTHLY employees (holidays excluded)
@@ -116,8 +116,8 @@ public class PayrollRunDialog extends JDialog {
     private final JTextField tfAdditionalEarnings = new JTextField("0");
 
     // ✅ Deductions Options UI
-    private final JButton btnDeductionOptions = new JButton("Options");
-    private final JButton btnEarningsOptions = new JButton("Earnings Options");
+    private final JButton btnDeductionOptions = new RoundedButton("Deduction", new Color(214, 92, 92), Color.WHITE);
+    private final JButton btnEarningsOptions = new RoundedButton("Earnings", new Color(24, 130, 90), Color.WHITE);
     private JPopupMenu deductionsPopup;
     private JPanel deductionsPanel;
     private JPopupMenu earningsPopup;
@@ -300,14 +300,13 @@ public class PayrollRunDialog extends JDialog {
     // ================= SUMMARY CARD =================
     private JPanel buildSummaryCard() {
         JPanel card = cardPanel();
-        card.setLayout(new BorderLayout(8, 8));
-        card.add(sectionTitle("Work Summary (whole pay period)"), BorderLayout.NORTH);
+        card.setLayout(new BorderLayout(8, 6));
 
         JPanel wrap = new JPanel(new GridBagLayout());
         wrap.setOpaque(false);
 
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(4, 6, 4, 6);
+        g.insets = new Insets(2, 6, 2, 6);
         g.fill = GridBagConstraints.HORIZONTAL;
         g.anchor = GridBagConstraints.NORTHWEST;
 
@@ -322,7 +321,8 @@ public class PayrollRunDialog extends JDialog {
         r++;
         // Auto-fill + Recalculate moved beside Review/Add Holiday (to maximize space)
         Theme.styleSecondaryButton(btnRecalcFromLogs);
-        makeButton(btnRecalcFromLogs, 34);
+        keepOriginalIosButtonColors(btnRecalcFromLogs, "primary");
+        makeButton(btnRecalcFromLogs, 38);
 // ===== Two-column compact layout (fits all your sections) =====
         // Left col = Regular Day + Total
         // Right col = Holiday (Regular + Special)
@@ -337,39 +337,57 @@ public class PayrollRunDialog extends JDialog {
         lblPayPeriod.setFont(lblPayPeriod.getFont().deriveFont(Font.PLAIN, 12f));
         lblHolidayCount.setFont(lblHolidayCount.getFont().deriveFont(Font.PLAIN, 11.2f));
         Theme.styleSecondaryButton(btnReviewHolidays);
-        makeButton(btnReviewHolidays, 34);
+        keepOriginalIosButtonColors(btnReviewHolidays, "primary");
+        makeButton(btnReviewHolidays, 38);
 
-        JPanel holLine = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        holLine.setOpaque(false);
-        holLine.add(lblHolidayCount);
-        holLine.add(btnReviewHolidays);
-
-        
-        holLine.add(Box.createHorizontalStrut(12));
-        holLine.add(chkAutoFromLogs);
-        holLine.add(btnRecalcFromLogs);
-g.gridx = 0; g.gridy = r;
-        wrap.add(new JLabel(""), g);
-        g.gridx = 1; g.gridwidth = 3;
-        wrap.add(holLine, g);
-        g.gridwidth = 1;
-
-        card.add(wrap, BorderLayout.CENTER);
-
-        JButton clear = new JButton("Clear Preview");
+        JButton clear = new RoundedButton("Clear Preview", new Color(245, 168, 34), new Color(30, 30, 30));
         Theme.styleOrangeButton(clear);
-        makeButton(clear, 34);
+        keepOriginalIosButtonColors(clear, "warning");
+        makeButton(clear, 38);
         clear.addActionListener(e -> {
             preview.setText("");
             lastPayslip = null;
         });
 
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        bottom.setOpaque(false);
-        bottom.add(chkEnableOT);
-        bottom.add(clear);
+        JPanel holLine = new JPanel(new GridBagLayout());
+        holLine.setOpaque(false);
 
-        card.add(bottom, BorderLayout.SOUTH);
+        int holidayLabelWidth = 260;
+        Dimension holidayCountSize = new Dimension(holidayLabelWidth, Math.max(lblHolidayCount.getPreferredSize().height, 22));
+        lblHolidayCount.setPreferredSize(holidayCountSize);
+        lblHolidayCount.setMinimumSize(holidayCountSize);
+
+        GridBagConstraints hg = new GridBagConstraints();
+        hg.gridy = 0;
+        hg.insets = new Insets(0, 0, 0, 10);
+        hg.anchor = GridBagConstraints.WEST;
+        hg.fill = GridBagConstraints.NONE;
+        hg.weightx = 0;
+
+        hg.gridx = 0;
+        holLine.add(lblHolidayCount, hg);
+
+        hg.gridx = 1;
+        holLine.add(btnReviewHolidays, hg);
+
+        hg.gridx = 2;
+        holLine.add(chkAutoFromLogs, hg);
+
+        hg.gridx = 3;
+        holLine.add(btnRecalcFromLogs, hg);
+
+        hg.gridx = 4;
+        holLine.add(chkEnableOT, hg);
+
+        hg.gridx = 5;
+        hg.insets = new Insets(0, 0, 0, 0);
+        holLine.add(clear, hg);
+
+        g.gridx = 0; g.gridy = r; g.gridwidth = 4; g.weightx = 1;
+        wrap.add(holLine, g);
+        g.gridwidth = 1;
+
+        card.add(wrap, BorderLayout.CENTER);
         return card;
     }
 
@@ -378,7 +396,7 @@ g.gridx = 0; g.gridy = r;
         p.setOpaque(false);
 
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(2, 2, 2, 2);
+        g.insets = new Insets(1, 2, 1, 2);
         g.fill = GridBagConstraints.HORIZONTAL;
         g.anchor = GridBagConstraints.NORTHWEST;
 
@@ -427,9 +445,9 @@ g.gridx = 0; g.gridy = r;
         c.setBackground(new Color(0xFFFFFF));
         c.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Theme.BORDER, 1, true),
-                new EmptyBorder(8, 8, 8, 8)
+                new EmptyBorder(6, 8, 6, 8)
         ));
-        c.setLayout(new BorderLayout(6, 6));
+        c.setLayout(new BorderLayout(4, 4));
 
         JLabel t = new JLabel(title);
         t.setForeground(Theme.PRIMARY);
@@ -447,7 +465,7 @@ g.gridx = 0; g.gridy = r;
         JPanel body = (JPanel) miniCard.getComponent(1);
 
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(3, 0, 3, 0);
+        g.insets = new Insets(2, 0, 2, 0);
         g.fill = GridBagConstraints.HORIZONTAL;
         g.anchor = GridBagConstraints.WEST;
 
@@ -471,7 +489,7 @@ g.gridx = 0; g.gridy = r;
         GridBagConstraints g = new GridBagConstraints();
         g.gridx = 0; g.gridy = row; g.gridwidth = 2;
         g.fill = GridBagConstraints.HORIZONTAL;
-        g.insets = new Insets(6, 0, 6, 0);
+        g.insets = new Insets(4, 0, 4, 0);
         JSeparator sep = new JSeparator();
         sep.setForeground(Theme.BORDER);
         body.add(sep, g);
@@ -485,10 +503,10 @@ g.gridx = 0; g.gridy = r;
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
         // More bottom padding so buttons never clip (especially on 125%/150% scaling)
-        form.setBorder(new EmptyBorder(4, 6, 22, 6));
+        form.setBorder(new EmptyBorder(2, 6, 8, 6));
 
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 10, 6, 10);
+        g.insets = new Insets(4, 10, 4, 10);
         g.gridy = 0;
 
         java.util.function.Consumer<GridBagConstraints> asLabel = (c) -> {
@@ -541,18 +559,21 @@ g.gridx = 0; g.gridy = r;
         g.gridx = 3; asField.accept(g);
         form.add(tfAdditionalEarnings, g);
 
-        JButton btnCompute = new JButton("Compute Payslip");
-        JButton btnPDF = new JButton("Preview PDF");
-        JButton btnSend = new JButton("Upload Payslip");
+        JButton btnCompute = new RoundedButton("Compute Payslip", new Color(24, 130, 90), Color.WHITE);
+        JButton btnPDF = new RoundedButton("Preview PDF", new Color(59, 130, 246), Color.WHITE);
+        JButton btnSend = new RoundedButton("Upload Payslip", new Color(99, 102, 241), Color.WHITE);
 
         Theme.stylePrimaryButton(btnCompute);
         Theme.styleSecondaryButton(btnPDF);
         Theme.styleSecondaryButton(btnSend);
+        keepOriginalIosButtonColors(btnCompute, "primary");
+        keepOriginalIosButtonColors(btnPDF, "info");
+        keepOriginalIosButtonColors(btnSend, "upload");
 
-        // Slightly shorter so it won't clip anywhere
-        makeButton(btnCompute, 36);
-        makeButton(btnPDF, 36);
-        makeButton(btnSend, 36);
+        // UI-only sizing to match the recent iOS buttons
+        makeButton(btnCompute, 40);
+        makeButton(btnPDF, 40);
+        makeButton(btnSend, 40);
 
         btnCompute.addActionListener(e -> computePayslip());
         btnPDF.addActionListener(e -> generatePDF());
@@ -560,46 +581,36 @@ g.gridx = 0; g.gridy = r;
 
         JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         btnRow.setOpaque(false);
-        // Tiny padding inside the row so the bottom of buttons never touches the edge
-        btnRow.setBorder(new EmptyBorder(2, 0, 4, 0));
+        btnRow.setBorder(new EmptyBorder(0, 0, 0, 0));
         btnRow.add(btnCompute);
         btnRow.add(btnPDF);
         btnRow.add(btnSend);
 
-        // ---- Row 3 (Options + Buttons)
+        // ---- Row 3 (Option buttons directly below their matching fields)
         g.gridy++;
-        g.insets = new Insets(6, 10, 16, 10);
-
-        // Options buttons under the Deductions / Additional Earnings row
-        JPanel optionsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        optionsRow.setOpaque(false);
-        optionsRow.add(btnDeductionOptions);
-        optionsRow.add(btnEarningsOptions);
+        g.insets = new Insets(4, 10, 4, 10);
 
         g.gridx = 1;
-        g.gridwidth = 2;
+        g.gridwidth = 1;
         g.weightx = 0;
         g.fill = GridBagConstraints.NONE;
         g.anchor = GridBagConstraints.WEST;
-        form.add(optionsRow, g);
-        g.gridwidth = 1;
+        form.add(btnDeductionOptions, g);
 
-        // Buttons aligned to the right
         g.gridx = 3;
+        g.anchor = GridBagConstraints.WEST;
+        form.add(btnEarningsOptions, g);
+
+        // ---- Row 4 (main payroll actions below Earnings, right-aligned)
+        g.gridy++;
+        g.gridx = 2;
+        g.gridwidth = 2;
         g.weightx = 1;
         g.fill = GridBagConstraints.HORIZONTAL;
         g.anchor = GridBagConstraints.EAST;
+        g.insets = new Insets(4, 10, 0, 10);
         form.add(btnRow, g);
-
-        // ---- Spacer absorber
-        g.gridy++;
-        g.gridx = 0;
-        g.gridwidth = 4;
-        g.weightx = 1;
-        g.weighty = 1;
-        g.fill = GridBagConstraints.BOTH;
-        g.insets = new Insets(0, 0, 0, 0);
-        form.add(Box.createGlue(), g);
+        g.gridwidth = 1;
 
         card.add(form, BorderLayout.CENTER);
         return card;
@@ -1284,8 +1295,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
         deductionsPanel.add(totalLbl);
         deductionsPanel.add(Box.createVerticalStrut(8));
 
-        JButton btnClear = new JButton("Clear");
-        JButton btnDone = new JButton("Done");
+        JButton btnClear = new RoundedButton("Clear", new Color(245, 245, 245), new Color(35, 35, 35));
+        JButton btnDone = new RoundedButton("Done", new Color(24, 130, 90), Color.WHITE);
         tfCashNote.addActionListener(e -> {
             recalc.run();
             if (tfOthersNote.isEnabled()) tfOthersNote.requestFocusInWindow();
@@ -1297,8 +1308,10 @@ private static class DurationDocumentFilter extends DocumentFilter {
         });
         Theme.styleSecondaryButton(btnClear);
         Theme.stylePrimaryButton(btnDone);
-        makeButton(btnClear, 36);
-        makeButton(btnDone, 36);
+        keepOriginalIosButtonColors(btnClear, "neutral");
+        keepOriginalIosButtonColors(btnDone, "primary");
+        makeButton(btnClear, 38);
+        makeButton(btnDone, 38);
 
         btnClear.addActionListener(e -> {
             cbCash.setSelected(false);
@@ -1505,12 +1518,14 @@ private static class DurationDocumentFilter extends DocumentFilter {
         earningsPanel.add(totalLbl);
         earningsPanel.add(Box.createVerticalStrut(12));
 
-        JButton btnClear = new JButton("Clear");
-        JButton btnDone = new JButton("Done");
+        JButton btnClear = new RoundedButton("Clear", new Color(245, 245, 245), new Color(35, 35, 35));
+        JButton btnDone = new RoundedButton("Done", new Color(24, 130, 90), Color.WHITE);
         Theme.styleSecondaryButton(btnClear);
         Theme.stylePrimaryButton(btnDone);
-        makeButton(btnClear, 36);
-        makeButton(btnDone, 36);
+        keepOriginalIosButtonColors(btnClear, "neutral");
+        keepOriginalIosButtonColors(btnDone, "primary");
+        makeButton(btnClear, 38);
+        makeButton(btnDone, 38);
 
         btnClear.addActionListener(e -> {
             cbIncentives.setSelected(false);
@@ -1558,10 +1573,43 @@ private static class DurationDocumentFilter extends DocumentFilter {
         recalc.run();
     }
 
+
+    private void keepOriginalIosButtonColors(JButton b, String role) {
+        if (!(b instanceof RoundedButton rb)) return;
+
+        if ("primary".equals(role)) {
+            rb.setBackground(new Color(24, 130, 90));
+            rb.setForeground(Color.WHITE);
+        } else if ("warning".equals(role)) {
+            rb.setBackground(new Color(245, 168, 34));
+            rb.setForeground(new Color(30, 30, 30));
+        } else if ("neutral".equals(role)) {
+            rb.setBackground(new Color(245, 245, 245));
+            rb.setForeground(new Color(35, 35, 35));
+        } else if ("danger".equals(role)) {
+            rb.setBackground(new Color(214, 92, 92));
+            rb.setForeground(Color.WHITE);
+        } else if ("info".equals(role)) {
+            rb.setBackground(new Color(59, 130, 246));
+            rb.setForeground(Color.WHITE);
+        } else if ("upload".equals(role)) {
+            rb.setBackground(new Color(99, 102, 241));
+            rb.setForeground(Color.WHITE);
+        }
+
+        rb.setCornerRadius(18);
+        rb.setOpaque(false);
+        rb.setContentAreaFilled(false);
+        rb.setBorderPainted(false);
+        rb.setFocusPainted(false);
+    }
+
     // ================= STYLES =================
     private void applyThemeStyles() {
         Theme.styleCombo(cbEmp);
         Theme.styleCombo(cbPeriod);
+        applyRoundedFieldStyle(cbEmp);
+        applyRoundedFieldStyle(cbPeriod);
 
         // new fields
         for (JTextField tf : new JTextField[]{
@@ -1569,7 +1617,10 @@ private static class DurationDocumentFilter extends DocumentFilter {
                 tfRegHolHours, tfRegHolOT,
                 tfSpecHolHours, tfSpecHolOT,
                 tfTotalHours, tfTotalOT
-        }) Theme.styleInput(tf);
+        }) {
+            Theme.styleInput(tf);
+            applyRoundedFieldStyle(tf);
+        }
 
         Theme.styleInput(tfStart);
         Theme.styleInput(tfEnd);
@@ -1578,8 +1629,17 @@ private static class DurationDocumentFilter extends DocumentFilter {
         Theme.styleInput(tfDeductions);
         Theme.styleInput(tfAdditionalEarnings);
 
+        applyRoundedFieldStyle(tfStart);
+        applyRoundedFieldStyle(tfEnd);
+        applyRoundedFieldStyle(tfOTMultiplier);
+        applyRoundedFieldStyle(tfOTRateOverride);
+        applyRoundedFieldStyle(tfDeductions);
+        applyRoundedFieldStyle(tfAdditionalEarnings);
+
         Theme.styleSecondaryButton(btnDeductionOptions);
         Theme.styleSecondaryButton(btnEarningsOptions);
+        keepOriginalIosButtonColors(btnDeductionOptions, "danger");
+        keepOriginalIosButtonColors(btnEarningsOptions, "primary");
 
         setFixedHeight(cbEmp, 32);
 
@@ -1599,10 +1659,41 @@ private static class DurationDocumentFilter extends DocumentFilter {
         setFixedHeight(tfDeductions, 32);
         setFixedHeight(tfAdditionalEarnings, 32);
 
-        makeButton(btnDeductionOptions, 34);
-        makeButton(btnEarningsOptions, 34);
-        btnDeductionOptions.setPreferredSize(new Dimension(92, 34));
-        btnEarningsOptions.setPreferredSize(new Dimension(150, 34));
+        makeButton(btnDeductionOptions, 38);
+        makeButton(btnEarningsOptions, 38);
+        btnDeductionOptions.setPreferredSize(new Dimension(110, 38));
+        btnEarningsOptions.setPreferredSize(new Dimension(110, 38));
+    }
+
+
+    private void applyRoundedFieldStyle(JComponent c) {
+        if (c == null) return;
+
+        Color bg = Theme.INPUT_BG != null ? Theme.INPUT_BG : Color.WHITE;
+        Color border = Theme.BORDER != null ? Theme.BORDER : new Color(214, 204, 190);
+
+        if (c instanceof JTextField tf) {
+            tf.setOpaque(true);
+            tf.setBackground(bg);
+            tf.setBorder(BorderFactory.createCompoundBorder(
+                    new javax.swing.border.LineBorder(border, 1, true),
+                    new EmptyBorder(6, 12, 6, 12)
+            ));
+            tf.setCaretColor(Theme.TEXT);
+            return;
+        }
+
+        if (c instanceof JComboBox<?> cb) {
+            cb.setOpaque(true);
+            cb.setBackground(bg);
+            cb.setBorder(BorderFactory.createCompoundBorder(
+                    new javax.swing.border.LineBorder(border, 1, true),
+                    new EmptyBorder(2, 8, 2, 8)
+            ));
+            if (cb.getRenderer() instanceof JComponent jc) {
+                jc.setOpaque(true);
+            }
+        }
     }
 
     private void setFixedHeight(JComponent c, int h) {
@@ -1616,6 +1707,8 @@ private static class DurationDocumentFilter extends DocumentFilter {
         cbPeriod.setOpaque(true);
         cbEmp.setBackground(Theme.INPUT_BG);
         cbPeriod.setBackground(Theme.INPUT_BG);
+        applyRoundedFieldStyle(cbEmp);
+        applyRoundedFieldStyle(cbPeriod);
     }
 
     private JPanel cardPanel() {
@@ -1631,7 +1724,7 @@ private static class DurationDocumentFilter extends DocumentFilter {
 
     private void makeButton(JButton b, int height) {
         b.setFont(b.getFont().deriveFont(Font.BOLD, 12.0f));
-        b.setMargin(new Insets(6, 14, 6, 14));
+        b.setMargin(new Insets(5, 14, 5, 14));
         Dimension pref = b.getPreferredSize();
         b.setPreferredSize(new Dimension(pref.width, height));
     }
@@ -2651,6 +2744,8 @@ void initPeriodCombo() {
         cbM.setPreferredSize(boxSize);
         cbH.setMinimumSize(boxSize);
         cbM.setMinimumSize(boxSize);
+        applyRoundedFieldStyle(cbH);
+        applyRoundedFieldStyle(cbM);
 
         // Renderer for both dropdown list and "selected item" display
         ListCellRenderer<? super Integer> numRenderer = (list, value, index, isSelected, cellHasFocus) -> {

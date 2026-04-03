@@ -40,7 +40,7 @@ public final class PayrollTabModernizer {
             if (jc instanceof JComboBox<?> cb) makeCombo(cb);
 
             // Buttons
-            if (jc instanceof JButton b) makeButton(b);
+            if (jc instanceof JButton b && !(jc instanceof RoundedButton)) makeButton(b);
 
             // Scroll / preview
             if (jc instanceof JScrollPane sp) {

@@ -678,24 +678,22 @@ public class EmployeeDetailsDialog extends JDialog {
     }
 
     private JButton pillButton(String text) {
-        JButton b = new JButton(text);
+        RoundedButton b = new RoundedButton(text, new Color(245, 245, 245), new Color(35, 35, 35));
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setBackground(Color.WHITE);
-        b.setBorder(new LineBorder(LINE, 1, true));
-        b.setPreferredSize(new Dimension(92, 34));
-        // Rounded-rectangle corners (not pill, not circle)
+        b.setMargin(new Insets(7, 16, 7, 16));
+        b.setPreferredSize(new Dimension(Math.max(92, b.getPreferredSize().width), 38));
+        b.setCornerRadius(18);
         return b;
     }
 
     private JButton squareButton(String text) {
-        JButton b = new JButton(text);
+        RoundedButton b = new RoundedButton(text, new Color(245, 245, 245), new Color(35, 35, 35));
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setBackground(Color.WHITE);
-        b.setBorder(new LineBorder(LINE, 1, true));
-        b.setPreferredSize(new Dimension(44, 34));
-        // Rounded-rectangle corners (not pill, not circle)
+        b.setMargin(new Insets(7, 12, 7, 12));
+        b.setPreferredSize(new Dimension(44, 38));
+        b.setCornerRadius(18);
         return b;
     }
 

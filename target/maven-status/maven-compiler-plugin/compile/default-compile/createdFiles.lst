@@ -30,13 +30,12 @@ ui\PayrollRunDialog.class
 util\AppConstants.class
 ui\EmployeesPanel$2.class
 ui\LogbookPanel$PopupDialogUtil$1.class
+ui\EmployeesPanel$PillTextField.class
 ui\EmployeeTimePanel$2.class
 ui\EmployeeTimePanel$TimeMultiLineRenderer.class
 ui\PayrollRunDialog$5.class
 ui\EmployeeTimePanel.class
 model\Payslip.class
-ui\DashboardFrame$RoundedPanel.class
-ui\LoginFrame$TabletButton$Type.class
 ui\LogbookPanel.class
 ui\PayrollRunDialog$2.class
 ui\StatusBadgeRenderer.class
@@ -45,7 +44,6 @@ ui\PayrollRunDialog$13.class
 ui\EmployeesDialog$1.class
 ui\EmployeeTimePanel$PairRow.class
 util\Theme$2.class
-ui\LogbookPanel$PillButton$1.class
 ui\CameraCaptureDialog$1.class
 ui\EmployeeTimePanel$1PairAcc.class
 ui\PayrollRunDialog$DurationDocumentFilter.class
@@ -53,6 +51,7 @@ ui\ModernConfirmDialog.class
 model\WorkSummary.class
 ui\EmployeesPanel$1.class
 ui\LogbookPanel$TimePickerField.class
+ui\StatusBadgeRenderer$RoundedBadge.class
 ui\LoginFrame$RainbowLabel.class
 ui\EmployeesPanel.class
 ui\PayrollRunDialog$3.class
@@ -67,13 +66,12 @@ ui\EmployeePortalFrame.class
 ui\PayrollTabModernizer.class
 ui\CameraCaptureDialog.class
 ui\LogbookPanel$1.class
-ui\EmployeeTimePanel$PillButton$1.class
 ui\ModernConfirmDialog$RoundedButtonUI.class
 util\Theme$1.class
+ui\LoginFrame$PillToggleButton$1.class
 util\UpdateChecker.class
 ui\LogbookPanel$DatePickerField$1.class
 ui\LoginFrame$LoginOutcome.class
-ui\EmployeeTimePanel$PillButton.class
 ui\EmployeeTimePanel$ZebraCellRenderer.class
 ui\RoundedButton$1.class
 ui\EmployeesPanel$6.class
@@ -83,7 +81,6 @@ dao\TimeLogDAO$ActivityRow.class
 dao\TimeLogDAO$PortalState.class
 ui\LoginFrame.class
 ui\HolidayReviewDialog$ZebraRenderer.class
-ui\LoginFrame$TabletButton.class
 ui\RoundedButton.class
 dao\EmployeeDAO.class
 ui\LogbookPanel$TimePickedListener.class
@@ -110,7 +107,6 @@ ui\EmployeeDetailsDialog$RoundedPanel.class
 ui\LoginFrame$RoundedPasswordField.class
 ui\EmployeeAccountDialog.class
 ui\LoginFrame$GlassCard.class
-ui\CameraCaptureDialog$RoundedButton$1.class
 ui\PayrollRunDialog$9.class
 ui\CameraCaptureDialog$LiveView.class
 ui\LogbookPanel$6.class
@@ -121,7 +117,6 @@ ui\EmployeeDetailsDialog$StatTile.class
 ui\LoginFrame$RoundedTextField.class
 ui\DashboardFrame.class
 util\HolidayPresetsPH.class
-ui\CameraCaptureDialog$RoundedButton.class
 ui\LogbookPanel$RowData.class
 model\Holiday.class
 ui\LogbookPanel$PopupDialogUtil.class

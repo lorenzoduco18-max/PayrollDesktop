@@ -18,6 +18,8 @@ import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
@@ -48,6 +50,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRootPane;
 import javax.swing.JTextField;
+import javax.swing.Timer;
 import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
@@ -80,8 +83,8 @@ public class LoginFrame extends JFrame {
     private PillToggleButton btnAdmin;
     private PillToggleButton btnEmployee;
 
-    private TabletButton btnLogin;
-    private TabletButton btnShow;
+    private RoundedButton btnLogin;
+    private RoundedButton btnShow;
 
     private char defaultEchoChar;
     private AnimatedGradientPanel bg;
@@ -97,9 +100,9 @@ public class LoginFrame extends JFrame {
     private static final int LOGO_W = 102;
     private static final int LOGO_H = 76;
 
-    private static final int FIELD_H = 26;
+    private static final int FIELD_H = 28;
     private static final int FIELD_W = 230;
-    private static final int BTN_H = 24;
+    private static final int BTN_H = 36;
 
     private static final int RADIUS = 18;
 
@@ -199,10 +202,12 @@ public LoginFrame() {
         txtPassword.setMaximumSize(new Dimension(FIELD_W - 56 - 8, FIELD_H));
         txtPassword.setPreferredSize(new Dimension(FIELD_W - 56 - 8, FIELD_H));
 
-        btnShow = new TabletButton("Show");
-        btnShow.setPreferredSize(new Dimension(56, FIELD_H));
-        btnShow.setMaximumSize(new Dimension(56, FIELD_H));
-        btnShow.setType(TabletButton.Type.SECONDARY);
+        btnShow = new RoundedButton("Show", new Color(249, 248, 244), new Color(21, 39, 71));
+        btnShow.setFont(btnShow.getFont().deriveFont(Font.BOLD, 11.5f));
+        btnShow.setCornerRadius(16);
+        btnShow.setMargin(new Insets(6, 12, 6, 12));
+        btnShow.setPreferredSize(new Dimension(60, FIELD_H));
+        btnShow.setMaximumSize(new Dimension(60, FIELD_H));
         btnShow.addActionListener(e -> toggleShowPassword());
 
         passRow.add(txtPassword);
@@ -243,11 +248,13 @@ card.add(Box.createVerticalStrut(6));
 
         card.add(Box.createVerticalStrut(4));
 
-        btnLogin = new TabletButton("Login");
+        btnLogin = new RoundedButton("Login", new Color(52, 180, 130), Color.WHITE);
         btnLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnLogin.setPreferredSize(new Dimension(160, BTN_H));
-        btnLogin.setMaximumSize(new Dimension(160, BTN_H));
-        btnLogin.setType(TabletButton.Type.PRIMARY);
+        btnLogin.setFont(btnLogin.getFont().deriveFont(Font.BOLD, 12.5f));
+        btnLogin.setCornerRadius(18);
+        btnLogin.setMargin(new Insets(8, 18, 8, 18));
+        btnLogin.setPreferredSize(new Dimension(90, 20));
+        btnLogin.setMaximumSize(new Dimension(90, 20));
         btnLogin.addActionListener(e -> doLogin());
         
 card.add(btnLogin);
@@ -355,6 +362,18 @@ card.add(versionLabel);wrapper.add(card);
         l.setShadow(new Color(0, 0, 0, 220), 2, 2);
         l.setFont(l.getFont().deriveFont(Font.PLAIN, 11.5f));
         return l;
+    }
+
+    private RoundedButton createSmallActionButton(String text, Color background, Color foreground, int width, int height) {
+        RoundedButton button = new RoundedButton(text, background, foreground);
+        button.setFont(button.getFont().deriveFont(Font.BOLD, 11.5f));
+        button.setCornerRadius(16);
+        button.setMargin(new Insets(6, 12, 6, 12));
+        button.setFocusPainted(false);
+        button.setPreferredSize(new Dimension(width, height));
+        button.setMaximumSize(new Dimension(width, height));
+        button.setMinimumSize(new Dimension(width, height));
+        return button;
     }
 
     private void toggleShowPassword() {
@@ -683,18 +702,63 @@ card.add(versionLabel);wrapper.add(card);
     }
 
     // ===========================
-    // Pill toggle
+    // Pill toggle styled like updated system buttons
     // ===========================
     private static class PillToggleButton extends JToggleButton {
+        private final Color selectedBg = new Color(52, 180, 130);
+        private final Color idleBg = new Color(249, 248, 244);
+        private final Color selectedFg = Color.WHITE;
+        private final Color idleFg = new Color(21, 39, 71);
+        private final Color border = new Color(227, 217, 199);
+        private boolean hover = false;
+        private boolean press = false;
+        private float hoverAnim = 0f;
+        private float pressAnim = 0f;
+        private Timer animTimer;
+
         PillToggleButton(String text) {
             super(text);
             setFocusPainted(false);
             setBorderPainted(false);
             setContentAreaFilled(false);
             setOpaque(false);
-            setPreferredSize(new Dimension(106, 28));
+            setPreferredSize(new Dimension(92, 32));
+            setMaximumSize(new Dimension(92, 32));
+            setMinimumSize(new Dimension(92, 32));
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             setFont(getFont().deriveFont(Font.BOLD, 11.5f));
+
+            animTimer = new Timer(16, e -> {
+                boolean changed = false;
+                float hoverTarget = hover && isEnabled() ? 1f : 0f;
+                float pressTarget = press && isEnabled() ? 1f : 0f;
+
+                float newHover = hoverAnim + (hoverTarget - hoverAnim) * 0.18f;
+                float newPress = pressAnim + (pressTarget - pressAnim) * 0.22f;
+
+                if (Math.abs(newHover - hoverAnim) > 0.001f) {
+                    hoverAnim = newHover;
+                    changed = true;
+                }
+                if (Math.abs(newPress - pressAnim) > 0.001f) {
+                    pressAnim = newPress;
+                    changed = true;
+                }
+
+                if (changed) repaint(); else animTimer.stop();
+            });
+
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e) { hover = true; startAnim(); }
+                @Override public void mouseExited(MouseEvent e) { hover = false; press = false; startAnim(); }
+                @Override public void mousePressed(MouseEvent e) { if (isEnabled()) { press = true; startAnim(); } }
+                @Override public void mouseReleased(MouseEvent e) { press = false; startAnim(); }
+            });
+        }
+
+        private void startAnim() {
+            if (!animTimer.isRunning()) animTimer.start();
+            repaint();
         }
 
         @Override
@@ -702,91 +766,65 @@ card.add(versionLabel);wrapper.add(card);
             Graphics2D g2 = (Graphics2D) g.create();
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
                 int w = getWidth();
                 int h = getHeight();
+                boolean selected = isSelected();
+                Color bg = selected ? selectedBg : idleBg;
+                Color fg = selected ? selectedFg : idleFg;
 
-                boolean sel = isSelected();
+                if (pressAnim > 0.01f) {
+                    bg = darken(bg, selected ? 0.10f : 0.05f);
+                } else if (hoverAnim > 0.01f) {
+                    bg = selected ? brighten(bg, 0.06f) : darken(idleBg, 0.02f);
+                }
 
-                Color bg = sel ? new Color(27, 160, 96) : new Color(255, 255, 255, 170);
-                Color border = sel ? new Color(16, 120, 70) : new Color(170, 170, 170, 150);
-                Color txt = sel ? Color.WHITE : new Color(40, 40, 40);
+                int arc = 18;
+                int shadowOffset = selected ? 3 : 2;
+                g2.setColor(new Color(0, 0, 0, selected ? 30 : 18));
+                g2.fillRoundRect(0, shadowOffset, w - 1, h - shadowOffset, arc, arc);
 
-                g2.setColor(new Color(0, 0, 0, sel ? 22 : 14));
-                g2.fillRoundRect(2, 3, w - 4, h - 4, 16, 16);
+                GradientPaint fill = new GradientPaint(
+                    0, 0,
+                    brighten(bg, selected ? 0.18f : 0.10f),
+                    0, h,
+                    darken(bg, selected ? 0.18f : 0.08f)
+                );
+                g2.setPaint(fill);
+                g2.fillRoundRect(0, 0, w - 1, h - 2, arc, arc);
 
-                g2.setColor(bg);
-                g2.fillRoundRect(0, 0, w, h, 16, 16);
+                g2.setColor(new Color(255, 255, 255, selected ? 90 : 65));
+                g2.drawRoundRect(1, 1, w - 3, h - 5, arc - 2, arc - 2);
 
-                g2.setColor(border);
-                g2.drawRoundRect(0, 0, w - 1, h - 1, 16, 16);
+                Color stroke = selected ? darken(bg, 0.28f) : border;
+                g2.setColor(new Color(stroke.getRed(), stroke.getGreen(), stroke.getBlue(), selected ? 135 : 110));
+                g2.drawRoundRect(0, 0, w - 2, h - 3, arc, arc);
 
-                g2.setColor(txt);
-                FontMetrics fm = g2.getFontMetrics();
+                FontMetrics fm = g2.getFontMetrics(getFont());
                 int tx = (w - fm.stringWidth(getText())) / 2;
-                int ty = (h - fm.getHeight()) / 2 + fm.getAscent();
+                int ty = (h - fm.getHeight()) / 2 + fm.getAscent() - 1 + Math.round(pressAnim);
+                g2.setColor(fg);
+                g2.setFont(getFont());
                 g2.drawString(getText(), tx, ty);
-
             } finally {
                 g2.dispose();
             }
         }
-    }
 
-    // ===========================
-    // Tablet button
-    // ===========================
-    private static class TabletButton extends JButton {
-
-        enum Type { PRIMARY, SECONDARY }
-        private Type type = Type.PRIMARY;
-
-        TabletButton(String text) {
-            super(text);
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setContentAreaFilled(false);
-            setOpaque(false);
-            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            setFont(getFont().deriveFont(Font.BOLD, 11.5f));
+        private static Color brighten(Color c, float amount) {
+            int r = (int) (c.getRed() + (255 - c.getRed()) * amount);
+            int g = (int) (c.getGreen() + (255 - c.getGreen()) * amount);
+            int b = (int) (c.getBlue() + (255 - c.getBlue()) * amount);
+            return new Color(Math.min(255, r), Math.min(255, g), Math.min(255, b), c.getAlpha());
         }
 
-        void setType(Type t) { this.type = t; repaint(); }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            try {
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                int w = getWidth();
-                int h = getHeight();
-                boolean press = getModel().isPressed();
-
-                Color bg = (type == Type.PRIMARY) ? new Color(27, 160, 96) : new Color(255, 255, 255, 175);
-                Color border = (type == Type.PRIMARY) ? new Color(16, 120, 70) : new Color(170, 170, 170, 150);
-                Color txt = (type == Type.PRIMARY) ? Color.WHITE : new Color(35, 35, 35);
-
-                if (press && type == Type.PRIMARY) bg = new Color(18, 140, 82);
-
-                g2.setColor(new Color(0, 0, 0, 16));
-                g2.fillRoundRect(2, 3, w - 4, h - 4, 16, 16);
-
-                g2.setColor(bg);
-                g2.fillRoundRect(0, 0, w, h, 16, 16);
-
-                g2.setColor(border);
-                g2.drawRoundRect(0, 0, w - 1, h - 1, 16, 16);
-
-                g2.setColor(txt);
-                FontMetrics fm = g2.getFontMetrics();
-                int tx = (w - fm.stringWidth(getText())) / 2;
-                int ty = (h - fm.getHeight()) / 2 + fm.getAscent();
-                g2.drawString(getText(), tx, ty);
-
-            } finally {
-                g2.dispose();
-            }
+        private static Color darken(Color c, float amount) {
+            int r = (int) (c.getRed() * (1f - amount));
+            int g = (int) (c.getGreen() * (1f - amount));
+            int b = (int) (c.getBlue() * (1f - amount));
+            return new Color(Math.max(0, r), Math.max(0, g), Math.max(0, b), c.getAlpha());
         }
     }
 

@@ -202,7 +202,7 @@ public class PDFUtil {
                 labelValueRow(cs, fonts, lx + 6, ry - 12, "EMPLOYEE", safe(empName));
                 ry -= rowH;
 
-                labelValueRowWrapped(cs, fonts, lx + 6, ry - 12, "ADDRESS", safe(address), lx + 6 + 165, (lx + leftW) - 6);
+                labelValueRowFit(cs, fonts, lx + 6, ry - 12, "ADDRESS", safe(address), lx + 6 + 165, (lx + leftW) - 6);
                 ry -= rowH;
 
                 labelValueRow(cs, fonts, lx + 6, ry - 12, "MOBILE NO.", safe(firstNonEmpty(personalContactNo, mobile)));
@@ -292,9 +292,9 @@ public class PDFUtil {
                 fillRect(cs, x0, y - rateH2, rateW2, rateH2, C_GREEN);
                 drawBox(cs, x0, y - rateH2, rateW2, rateH2, 1f);
 
-                double dailyRate = getDoubleSmart(p, new String[]{"dailyRate","ratePerDay","dayRate"}, new String[]{"daily","dayrate","rateperday"});
+                double dailyRate = getDouble(p, "dailyRate", "ratePerDay", "dayRate");
                 if (dailyRate == 0 && empObj != null) {
-                    dailyRate = getDoubleSmart(empObj, new String[]{"rate","dailyRate","ratePerDay","dayRate"}, new String[]{"rate","daily"});
+                    dailyRate = getDouble(empObj, "rate", "dailyRate", "ratePerDay", "dayRate");
                 }
 
                 double hourRate = getDoubleSmart(p, new String[]{"hourlyRate","hourRate"}, new String[]{"hourly","hourrate"});
@@ -817,6 +817,26 @@ deductionRowAmountBold(cs, fonts, dedX, dColAmt, dColRem, dY, "TOTAL DEDUCTIONS"
         textWrap(cs, fonts.reg, FS_SMALL, C_BLACK, value, valueX, y, maxW, 2);
     }
 
+    private static void labelValueRowFit(PDPageContentStream cs, FontPack fonts, float x, float y,
+                                         String label, String value, float valueX, float rightEdge) throws IOException {
+        text(cs, fonts.bold, FS_SMALL, C_BLACK, label, x, y);
+        String s = safe(value).replace("\n", " ").replace("\r", " ").replaceAll("\\s+", " ").trim();
+        float maxW = (rightEdge - 4) - valueX;
+        float size = FS_SMALL;
+
+        while (size > 6.0f) {
+            float w = fonts.reg.getStringWidth(s) / 1000f * size;
+            if (w <= maxW) break;
+            size -= 0.5f;
+        }
+
+        if ((fonts.reg.getStringWidth(s) / 1000f * size) > maxW) {
+            s = ellipsize(fonts.reg, s, size, maxW);
+        }
+
+        text(cs, fonts.reg, size, C_BLACK, s, valueX, y);
+    }
+
     private static void summaryRow(PDPageContentStream cs, FontPack fonts, float x, float y, String label, String value) throws IOException {
         text(cs, fonts.bold, FS_SMALL, C_BLACK, label, x, y);
         text(cs, fonts.reg, FS_SMALL, C_BLACK, safe(value), x + 120, y);
@@ -892,6 +912,23 @@ deductionRowAmountBold(cs, fonts, dedX, dColAmt, dColRem, dY, "TOTAL DEDUCTIONS"
             }
         }
         if (line.length() > 0) text(cs, font, size, c, line.toString(), x, curY);
+    }
+
+    private static String ellipsize(PDFont font, String text, float size, float maxW) throws IOException {
+        String s = safe(text);
+        String ell = "...";
+        float ellW = font.getStringWidth(ell) / 1000f * size;
+        if (ellW > maxW) return "";
+        if ((font.getStringWidth(s) / 1000f * size) <= maxW) return s;
+
+        int end = s.length();
+        while (end > 0) {
+            String candidate = s.substring(0, end).trim() + ell;
+            float w = font.getStringWidth(candidate) / 1000f * size;
+            if (w <= maxW) return candidate;
+            end -= 1;
+        }
+        return ell;
     }
 
     // ===== Formatting =====

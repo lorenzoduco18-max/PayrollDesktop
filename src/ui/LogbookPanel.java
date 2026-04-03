@@ -81,9 +81,9 @@ public class LogbookPanel extends JPanel {
         // ===== TOP TOOLBAR =====
         JPanel toolbar = new JPanel(new BorderLayout(10, 0));
         toolbar.setOpaque(false);
-        toolbar.setBorder(new EmptyBorder(0, 0, 6, 0));
+        toolbar.setBorder(new EmptyBorder(6, 0, 10, 0));
 
-        JPanel leftTools = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel leftTools = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
         leftTools.setOpaque(false);
 
         JLabel lblSearch = new JLabel("Search:");
@@ -102,15 +102,21 @@ public class LogbookPanel extends JPanel {
         btnAllDates.setForeground(new Color(70, 70, 70));
         btnAllDates.setToolTipText("Show all dates");
 
+        btnAllDates.setBackground(new Color(245, 245, 245));
+        btnAdd.setBackground(new Color(24, 130, 90));
+        btnAdd.setForeground(Color.WHITE);
+        btnRefresh.setBackground(new Color(245, 245, 245));
+        btnRefresh.setForeground(new Color(55, 55, 55));
+        btnEdit.setBackground(new Color(235, 244, 255));
+        btnEdit.setForeground(new Color(40, 90, 160));
+        btnDelete.setBackground(new Color(214, 92, 92));
+        btnDelete.setForeground(Color.WHITE);
+
         leftTools.add(lblDateFilter);
         leftTools.add(dpFilterDate);
         leftTools.add(btnAllDates);
-        JPanel rightTools = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        JPanel rightTools = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 6));
         rightTools.setOpaque(false);
-
-        btnAdd.setForeground(new Color(0, 120, 80));
-        btnRefresh.setForeground(new Color(90, 90, 90));
-        btnEdit.setForeground(new Color(40, 90, 160));
 
         rightTools.add(btnAdd);
         rightTools.add(btnRefresh);
@@ -1368,7 +1374,11 @@ t.setSelectionBackground(new Color(35, 120, 195));
 
             PillButton btnCancel = new PillButton("Cancel", false);
             PillButton btnSave = new PillButton("Save", false);
-            btnSave.setForeground(new Color(0, 120, 80));
+
+            btnCancel.setBackground(new Color(245, 245, 245));
+            btnCancel.setForeground(new Color(40, 40, 40));
+            btnSave.setBackground(new Color(24, 130, 90));
+            btnSave.setForeground(Color.WHITE);
 
             btnCancel.addActionListener(e -> dispose());
             btnSave.addActionListener(e -> onSave());
@@ -1806,7 +1816,7 @@ t.setSelectionBackground(new Color(35, 120, 195));
             setFont(new Font("Segoe UI", Font.PLAIN, 12));
             setOpaque(false);
             setBorder(new EmptyBorder(9, 14, 9, 14));
-            setPreferredSize(new Dimension(280, 34));
+            setPreferredSize(new Dimension(280, 38));
         }
 
         @Override
@@ -1829,63 +1839,26 @@ t.setSelectionBackground(new Color(35, 120, 195));
         }
     }
 
-    private static class PillButton extends JButton {
+    private static class PillButton extends RoundedButton {
         private static final long serialVersionUID = 1L;
 
-        private final boolean danger;
-        private boolean hover = false;
-
-        private final Color borderNormal = new Color(220, 206, 186);
-        private final Color borderHover = new Color(180, 160, 135);
-
-        private final Color dangerBorder = new Color(220, 53, 69);
-        private final Color dangerHoverFill = new Color(255, 238, 238);
-
         PillButton(String text, boolean danger) {
-            super(text);
-            this.danger = danger;
-
+            super(
+                    text,
+                    danger ? new Color(214, 92, 92) : new Color(245, 245, 245),
+                    danger ? Color.WHITE : new Color(35, 35, 35)
+            );
             setFocusable(false);
             setFont(new Font("Segoe UI", Font.BOLD, 12));
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            setContentAreaFilled(false);
-            setBorderPainted(false);
-            setOpaque(false);
-            setMargin(new Insets(9, 18, 9, 18));
-
-            setForeground(danger ? dangerBorder : new Color(30, 30, 30));
-
-            addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e) { hover = false; repaint(); }
-            });
+            setMargin(new Insets(7, 16, 7, 16));
+            setCornerRadius(18);
         }
 
         @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int w = getWidth();
-            int h = getHeight();
-            int arc = h;
-
-            if (danger) g2.setColor(hover ? dangerHoverFill : Color.WHITE);
-            else g2.setColor(Color.WHITE);
-            g2.fillRoundRect(0, 0, w, h, arc, arc);
-
-            if (danger) g2.setColor(dangerBorder);
-            else g2.setColor(hover ? borderHover : borderNormal);
-            g2.drawRoundRect(0, 0, w - 1, h - 1, arc, arc);
-
-            g2.setFont(getFont());
-            g2.setColor(getForeground());
-            FontMetrics fm = g2.getFontMetrics();
-            int tx = (w - fm.stringWidth(getText())) / 2;
-            int ty = (h - fm.getHeight()) / 2 + fm.getAscent();
-            g2.drawString(getText(), tx, ty);
-
-            g2.dispose();
+        public Dimension getPreferredSize() {
+            Dimension d = super.getPreferredSize();
+            return new Dimension(Math.max(d.width, 54), 38);
         }
     }
 }
